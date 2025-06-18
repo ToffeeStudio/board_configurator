@@ -25,6 +25,7 @@ import {LayerControl} from './configure-panes/layer-control';
 import {Badge} from './configure-panes/badge';
 import GlowButton from '../toffee_studio/GlowButton/GlowButton';
 import GlowCircularLoader from '../toffee_studio/GlowCircularLoader/GlowCircularLoader';
+import GlowTooltip from '../toffee_studio/GlowTooltip/GlowTooltip';
 import {useAppSelector} from 'src/store/hooks';
 import {getSelectedDefinition} from 'src/store/definitionsSlice';
 import {
@@ -180,6 +181,11 @@ const Loader: React.FC<{
     <LoaderPane>
       {(showButton || noConnectedDevices) && !noSupportedIds && !isElectron ? (
         <>
+          <div style={{ marginBottom: '20px' }}>
+            <GlowTooltip title="This is a test tooltip!">
+              <GlowButton>Hover Over Me</GlowButton>
+            </GlowTooltip>
+          </div>
           <GlowCircularLoader size='120px' thickness='2px' sx={{ marginBottom: '20px' }} />
           <GlowButton
             onClick={() => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 
 interface GlowContainerProps {
   borderThickness?: string;
@@ -22,98 +22,68 @@ const GlowContainer: React.FC<GlowContainerProps> = ({ borderThickness = "1px", 
   const borderCol = colors[4]; // Color for border and bottom glow
   const backgroundCol = colors[5]; // Color for inner background
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-  const [height, setHeight] = useState(0);
-
-  useEffect(() => {
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        setWidth(containerRef.current.offsetWidth);
-        setHeight(containerRef.current.offsetHeight);
-      }
-    };
-
-    // Debounce resize handler
-    let resizeTimeout: NodeJS.Timeout;
-    const debouncedUpdate = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(updateDimensions, 100); // Adjust delay as needed
-    };
-
-    updateDimensions(); // Initial call
-    window.addEventListener("resize", debouncedUpdate);
-    return () => {
-      clearTimeout(resizeTimeout);
-      window.removeEventListener("resize", debouncedUpdate);
-    }
-  }, []);
-
-  // Calculate scale, ensuring width/height are not zero to avoid NaN/Infinity
-  const scaleX = width > 0 ? ((width - (parseFloat(borderThickness) * 2)) / width) : 1;
-  const scaleY = height > 0 ? ((height - (parseFloat(borderThickness) * 2)) / height) : 1;
+  // Separate padding from the rest of the style props to handle it independently
+  const { padding, ...restOfStyle } = style || {};
 
   return (
     <div
-      ref={containerRef}
       style={{
-        padding: borderThickness, // Use padding to create border effect
-        background: `linear-gradient(0deg, ${borderCol}, transparent)`, // Apply gradient to the outer container
-        borderRadius: style?.borderRadius, // Inherit borderRadius if provided
-        transition: "background 200ms ease-out",
-        ...style, // Spread user styles, allowing overrides but keeping essential ones
-        position: style?.position ?? 'relative', // Ensure positioning context if not provided
+        ...style,
+        background: `linear-gradient(0deg, ${borderCol}, transparent)`,
+        transition: "all 200ms ease-out",
+        padding: borderThickness, // Use padding for the border
       }}
     >
       <div
         className="glow-container-inner"
         style={{
-          width: '100%',
-          height: '100%',
           transition: "all 200ms ease-out",
           position: "relative",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           overflow: "hidden",
-          // transform: `scaleX(${scaleX}) scaleY(${scaleY})`, // Apply scale here if needed, or rely on padding
+          width: '100%',
+          height: '100%',
+          background: backgroundCol,
           borderRadius: `calc(${style?.borderRadius || '0px'} - ${borderThickness})`, // Adjust inner radius
-          background: backgroundCol, // Set background color directly
         }}
       >
-        {/* Background Elements */}
         <div style={{
           position: "absolute",
           zIndex: 0,
           width: "100%",
-          height: "100%", // Cover entire inner area
-          // backgroundColor: backgroundCol, // Background applied to parent now
-          // opacity: 0.8, // Opacity might not be needed if bg is solid
+          height: "60%",
+          backgroundColor: backgroundCol,
           transition: "all 200ms ease-out",
-        }} />
-        {/* Bottom Glow Element */}
+          opacity: 0.8
+        }}/>
         <div style={{
           position: "absolute",
           zIndex: 0,
-          bottom: 0, // Anchor to bottom
-          left: '50%', // Center horizontally
-          transform: 'translateX(-50%)', // Adjust for centering
-          width: "200%", // Wider for softer edge
-          height: "60%", // Adjust height of glow
-          backgroundImage: `radial-gradient(ellipse at bottom, ${borderCol} 0%, transparent 70%)`, // Use border color for glow, fade out
-          transition: "all 200ms ease-out",
-          opacity: 0.6, // Adjust glow opacity
-          pointerEvents: 'none',
-        }} />
-        {/* Children Content */}
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-end",
+          overflow: "hidden"
+        }}>
+          <div style={{
+            position: "absolute",
+            zIndex: 0,
+            width: "400%",
+            height: "40%",
+            backgroundImage: `radial-gradient(ellipse at bottom, ${borderCol}BB 0%, ${backgroundCol} 50%)`,
+            transition: "all 200ms ease-out",
+            opacity: 0.8
+          }}/>
+        </div>
         <div style={{
-          position: "relative", // Ensure children are above background elements
+          position: "relative",
           zIndex: 1,
           width: "100%",
           height: "100%",
-          display: 'flex', // If children need centering/flex properties
-          justifyContent: 'center',
-          alignItems: 'center'
+          padding: padding,
         }}>
           {children}
         </div>
