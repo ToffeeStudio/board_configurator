@@ -11,6 +11,7 @@ import {
 import {
   getConnectedDevices,
   getSelectedKeyboardAPI,
+  setForceAuthorize,
 } from 'src/store/devicesSlice';
 import {
   loadSupportedIds,
@@ -30,6 +31,19 @@ import {
 } from 'src/store/definitionsSlice';
 import {OVERRIDE_HID_CHECK} from 'src/utils/override';
 import {KeyboardValue} from 'src/utils/keyboard-api';
+import {Box, Button, Typography} from '@mui/material';
+import GlowButton from './toffee_studio/GlowButton/GlowButton'; 
+
+const defaultGlowColors = [
+  '#7b4dff', // 0: buttonShineLeft (Purple)
+  '#00e5ff', // 1: buttonShineRight (Cyan)
+  '#7b4dff', // 2: buttonGlowStart (Purple)
+  '#00e5ff', // 3: buttonGlowEnd (Cyan)
+  '#00c6ff', // 4: Border gradient / Glow Container bottom glow (Bright Blue)
+  '#1a1d2e', // 5: Glow Container background (Dark Blue/Purple)
+  '#2c2f48', // 6: buttonBackground (Slightly Lighter Dark Blue/Purple)
+  '#0f101c', // 7: buttonShadow (Very Dark Blue/Purple)
+];
 
 const ErrorHome = styled.div`
   background: var(--bg_gradient);

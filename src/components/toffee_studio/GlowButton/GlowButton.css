@@ -1,0 +1,10 @@
+.glow-button:hover {
+  --button-glow-opacity: 1;
+  --button-glow-duration: 0.25s;
+}
+
+@keyframes rotate {
+  to {
+    transform: scale(1.15) translateY(-15%) rotate(360deg) translateZ(0);
+  }
+}

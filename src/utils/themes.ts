@@ -5,6 +5,7 @@ export type Theme = {
   alpha: KeyColorPair;
   mod: KeyColorPair;
   accent: KeyColorPair;
+  glow: string[];
 };
 
 export const THEMES = {
@@ -22,6 +23,16 @@ export const THEMES = {
         c: '#E8C4B8',
         t: '#363434',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     OLIVE: {
       alpha: {
@@ -36,6 +47,16 @@ export const THEMES = {
         c: '#9DA183',
         t: '#66665A',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     OLIVE_DARK: {
       alpha: {
@@ -50,6 +71,16 @@ export const THEMES = {
         c: '#9DA183',
         t: '#66665A',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     OLNY: {
       alpha: {
@@ -64,6 +95,16 @@ export const THEMES = {
         t: '#c20018',
         c: '#cfa174',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     GREG: {
       alpha: {
@@ -78,6 +119,16 @@ export const THEMES = {
         c: '#171718',
         t: '#393b3b',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     CARBON_BLACK_A: {
       alpha: {
@@ -92,6 +143,16 @@ export const THEMES = {
         c: '#e66b67',
         t: '#f3f3f3',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     CARBON_BLACK_B: {
       alpha: {
@@ -106,6 +167,16 @@ export const THEMES = {
         c: '#e66b67',
         t: '#f3f3f3',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     SILVER_GREY_A: {
       alpha: {
@@ -120,6 +191,16 @@ export const THEMES = {
         c: '#e8db5d',
         t: '#3d3125',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     SILVER_GREY_B: {
       alpha: {
@@ -134,6 +215,16 @@ export const THEMES = {
         c: '#e8db5d',
         t: '#3d3125',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     NAVY_BLUE_A: {
       alpha: {
@@ -148,6 +239,16 @@ export const THEMES = {
         c: '#4dcfe0',
         t: '#f3f3f3',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     NAVY_BLUE_B: {
       alpha: {
@@ -162,6 +263,16 @@ export const THEMES = {
         c: '#4dcfe0',
         t: '#f3f3f3',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     FENDAI: {
       alpha: {
@@ -176,6 +287,16 @@ export const THEMES = {
         c: '#fc5d75',
         t: '#56395c',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     HONEY_MILK: {
       alpha: {
@@ -190,6 +311,16 @@ export const THEMES = {
         c: '#f8b140',
         t: '#07010f',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     MATCHA: {
       alpha: {
@@ -204,6 +335,16 @@ export const THEMES = {
         c: '#828572',
         t: '#4e475c',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     BLACK_GREY: {
       alpha: {
@@ -218,6 +359,16 @@ export const THEMES = {
         c: '#364352',
         t: '#eff3f2',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     WHITE_GREEN: {
       alpha: {
@@ -232,6 +383,16 @@ export const THEMES = {
         c: '#275c65',
         t: '#d0eae8',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     WHITE: {
       alpha: {
@@ -246,6 +407,16 @@ export const THEMES = {
         c: '#fefefe',
         t: '#272727',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     BLACK: {
       alpha: {
@@ -260,6 +431,16 @@ export const THEMES = {
         c: '#272727',
         t: '#fefefe',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     BLACK_AND_WHITE: {
       alpha: {
@@ -274,6 +455,16 @@ export const THEMES = {
         c: '#272727',
         t: '#fefefe',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
     },
     CLASSIC_GREY: {
       alpha: {
@@ -288,7 +479,19 @@ export const THEMES = {
         c: '#a0a0a0',
         t: '#1a1a1a',
       },
+      glow: [
+        "rgba(120, 0, 245, 0.5)",
+        "rgba(200, 148, 255, 0.65)",
+        "#B000E8",
+        "#009FFD",
+        "#3B2F63",
+        "#020112",
+        "#09041E",
+        "rgba(33, 4, 104, 0.2)"
+      ],
+
     },
   },
-  ...REMOTETHEMES,
+  // Removed remote themes from @the-via/reader to enforce local theme structure
+  // ...REMOTETHEMES,
 };

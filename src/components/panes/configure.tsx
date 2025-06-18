@@ -23,7 +23,7 @@ import * as RotaryEncoder from './configure-panes/custom/satisfaction75';
 import {makeCustomMenus} from './configure-panes/custom/menu-generator';
 import {LayerControl} from './configure-panes/layer-control';
 import {Badge} from './configure-panes/badge';
-import {AccentButtonLarge} from '../inputs/accent-button';
+import GlowButton from '../toffee_studio/GlowButton/GlowButton';
 import {useAppSelector} from 'src/store/hooks';
 import {getSelectedDefinition} from 'src/store/definitionsSlice';
 import {
@@ -36,11 +36,22 @@ import {useDispatch} from 'react-redux';
 import {reloadConnectedDevices} from 'src/store/devicesThunks';
 import {getV3MenuComponents} from 'src/store/menusSlice';
 import {getIsMacroFeatureSupported} from 'src/store/macrosSlice';
-import {getConnectedDevices, getSupportedIds} from 'src/store/devicesSlice';
+import {getConnectedDevices, getSupportedIds, setForceAuthorize} from 'src/store/devicesSlice';
 import {isElectron} from 'src/utils/running-context';
 import {useAppDispatch} from 'src/store/hooks';
 import {MenuTooltip} from '../inputs/tooltip';
 import {getRenderMode, getSelectedTheme} from 'src/store/settingsSlice';
+
+const defaultGlowColors = [
+  '#7b4dff', // 0: buttonShineLeft (Purple)
+  '#00e5ff', // 1: buttonShineRight (Cyan)
+  '#7b4dff', // 2: buttonGlowStart (Purple)
+  '#00e5ff', // 3: buttonGlowEnd (Cyan)
+  '#00c6ff', // 4: Border gradient / Glow Container bottom glow (Bright Blue)
+  '#1a1d2e', // 5: Glow Container background (Dark Blue/Purple)
+  '#2c2f48', // 6: buttonBackground (Slightly Lighter Dark Blue/Purple)
+  '#0f101c', // 7: buttonShadow (Very Dark Blue/Purple)
+];
 
 const MenuContainer = styled.div`
   padding: 15px 10px 20px 10px;
@@ -168,13 +179,23 @@ const Loader: React.FC<{
     <LoaderPane>
       {<ChippyLoader theme={theme} progress={loadProgress || null} />}
       {(showButton || noConnectedDevices) && !noSupportedIds && !isElectron ? (
-        <AccentButtonLarge onClick={() => dispatch(reloadConnectedDevices())}>
-          Authorize device
-          <FontAwesomeIcon style={{marginLeft: '10px'}} icon={faPlus} />
-        </AccentButtonLarge>
-      ) : (
-        <LoadingText isSearching={!selectedDefinition} />
-      )}
+        <>
+          <GlowButton
+            onClick={() => {
+              dispatch(setForceAuthorize(true));
+              dispatch(reloadConnectedDevices());
+            }}
+            colors={defaultGlowColors}
+            sx={{ fontSize: '1rem', minWidth: '180px' }}
+          >
+            Authorize device
+            <FontAwesomeIcon style={{ marginLeft: '10px' }} icon={faPlus} />
+          </GlowButton>
+        </>
+       ) : (
+         <LoadingText isSearching={!selectedDefinition} />
+       )}
+
     </LoaderPane>
   );
 };

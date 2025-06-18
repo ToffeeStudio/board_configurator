@@ -46,9 +46,8 @@ const settingsSlice = createSlice({
       toggleBool(state, 'showDesignTab');
     },
     toggleThemeMode: (state) => {
-      const newThemeMode = state.themeMode === 'light' ? 'dark' : 'light';
-      document.documentElement.dataset.themeMode = newThemeMode;
-      state.themeMode = newThemeMode;
+      document.documentElement.dataset.themeMode = 'dark';
+      state.themeMode = 'dark';
       setSettings(state);
     },
     updateRenderMode: (state, action: PayloadAction<'3D' | '2D'>) => {

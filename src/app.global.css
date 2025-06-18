@@ -16,7 +16,7 @@ body {
 body {
   position: relative;
   color: white;
-  background-color: #232c39;
+  background-color: black;
   font-family: 'Fira Sans', Helvetica, Helvetica Neue, Arial, serif;
   font-weight: 300;
   overflow: hidden;
@@ -56,9 +56,9 @@ a:hover {
   --color_light-grey: #d9d9d9;
   --color_medium-grey: #707070;
 
-  --color_dark-grey: #414141;
-  --color_light-jet: #222;
-  --color_jet: #1d1b1b;
+  --color_dark-grey: black;
+  --color_light-jet: black;
+  --color_jet: black;
   --color_warm-white: #fffbfb;
   --color_tinge: #c7c3c3;
   --color_tinge-light: #ebe4e4;
@@ -84,7 +84,7 @@ html[data-theme-mode='dark'] {
   --bg_outside-accent: var(--color_dark-grey);
   --bg_control_disabled: var(--color_dark-grey);
   --bg_control-highlighted: var(--color_light-grey);
-  --bg_gradient: linear-gradient(var(--color_jet), var(--color_light-jet));
+  --bg_gradient: black;
   --bg_control-disabled: transparent;
 }
 html[data-theme-mode='light'] {
