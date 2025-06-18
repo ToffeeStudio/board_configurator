@@ -24,6 +24,7 @@ import {makeCustomMenus} from './configure-panes/custom/menu-generator';
 import {LayerControl} from './configure-panes/layer-control';
 import {Badge} from './configure-panes/badge';
 import GlowButton from '../toffee_studio/GlowButton/GlowButton';
+import GlowCircularLoader from '../toffee_studio/GlowCircularLoader/GlowCircularLoader';
 import {useAppSelector} from 'src/store/hooks';
 import {getSelectedDefinition} from 'src/store/definitionsSlice';
 import {
@@ -177,9 +178,9 @@ const Loader: React.FC<{
   }, [selectedDefinition]);
   return (
     <LoaderPane>
-      {<ChippyLoader theme={theme} progress={loadProgress || null} />}
       {(showButton || noConnectedDevices) && !noSupportedIds && !isElectron ? (
         <>
+          <GlowCircularLoader size='120px' thickness='2px' sx={{ marginBottom: '20px' }} />
           <GlowButton
             onClick={() => {
               dispatch(setForceAuthorize(true));
