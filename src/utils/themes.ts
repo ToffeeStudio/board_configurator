@@ -20,8 +20,8 @@ export const THEMES = {
         t: '#E8C4B8',
       },
       accent: {
-        c: '#E8C4B8',
-        t: '#363434',
+        c: 'rgba(120, 0, 245, 0.5)',
+        t: 'rgba(200, 148, 255, 0.65)',
       },
       glow: [
         "rgba(120, 0, 245, 0.5)",

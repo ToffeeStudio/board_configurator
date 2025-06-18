@@ -181,11 +181,6 @@ const Loader: React.FC<{
     <LoaderPane>
       {(showButton || noConnectedDevices) && !noSupportedIds && !isElectron ? (
         <>
-          <div style={{ marginBottom: '20px' }}>
-            <GlowTooltip title="This is a test tooltip!">
-              <GlowButton>Hover Over Me</GlowButton>
-            </GlowTooltip>
-          </div>
           <GlowCircularLoader size='120px' thickness='2px' sx={{ marginBottom: '20px' }} />
           <GlowButton
             onClick={() => {
@@ -195,9 +190,10 @@ const Loader: React.FC<{
             colors={defaultGlowColors}
             sx={{ fontSize: '1rem', minWidth: '180px' }}
           >
-            Authorize device
+            Connect Keyboard
             <FontAwesomeIcon style={{ marginLeft: '10px' }} icon={faPlus} />
           </GlowButton>
+          <div style={{ height: "60px" }}/>
         </>
        ) : (
          <LoadingText isSearching={!selectedDefinition} />
@@ -214,7 +210,7 @@ const LoaderPane = styled(CenterPane)`
   row-gap: 50px;
   position: absolute;
   bottom: 50px;
-  top: 50px;
+  top: 100px;
   left: 0;
   right: 0;
   z-index: 4;

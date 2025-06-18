@@ -77,7 +77,6 @@ export const GlowButtonInner = styled.div<GlowButtonInnerProps>`
   padding: 10px 28px;
   box-sizing: border-box;
   width: 100%;
-  min-width: 124px;
   border-radius: calc(var(--button-radius) - var(--button-padding));
   background-color: ${props=>props.forceOn ? props.buttonBrightenedBackground : "var(--button-background)"};
   overflow: hidden;

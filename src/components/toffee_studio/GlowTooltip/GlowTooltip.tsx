@@ -4,12 +4,16 @@ import GlowContainer from '../GlowContainer/GlowContainer';
 import { useAppSelector } from 'src/store/hooks';
 import { getSelectedTheme } from 'src/store/settingsSlice';
 
+export type TooltipPosition = 'top' | 'bottom' | 'left' | 'right';
+
 interface GlowTooltipProps {
   children: React.ReactNode;
   title: string;
+  position?: TooltipPosition;
+  width?: string;
 }
 
-const GlowTooltip: React.FC<GlowTooltipProps> = ({ children, title }) => {
+const GlowTooltip: React.FC<GlowTooltipProps> = ({ children, title, position = 'top', width }) => {
   const theme = useAppSelector(getSelectedTheme);
 
   // If the theme is not yet loaded, we can't render the glow. 
@@ -31,7 +35,7 @@ const GlowTooltip: React.FC<GlowTooltipProps> = ({ children, title }) => {
   return (
     <TooltipWrapper>
       {children}
-      <TooltipBox>
+      <TooltipBox position={position} width={width}>
         <GlowContainer colors={tooltipColors} style={{ padding: '8px 12px', borderRadius: '6px' }}>
           {title}
         </GlowContainer>

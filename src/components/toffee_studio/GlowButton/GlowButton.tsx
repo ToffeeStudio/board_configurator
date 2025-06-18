@@ -54,7 +54,7 @@ const generateGlowButtons = () => {
 };
 
 
-export default ({onClick, children, forceOn, showEffect, sx}: any) => {
+export default ({onClick, children, forceOn, sx}: any) => {
 
   const theme = useAppSelector(getSelectedTheme);
 
@@ -72,8 +72,7 @@ export default ({onClick, children, forceOn, showEffect, sx}: any) => {
     <GlowButton
       className="glow-button"
       style={{
-        border: hovered ? `1px solid ${theme.glow![4]}00` : `1px solid ${theme.glow![4]}FF`,
-        ...sx
+        border: (forceOn || hovered) ? `1px solid ${theme.glow![4]}00` : `1px solid ${theme.glow![4]}FF`,
       }}
       onClick={onClick}
       onMouseEnter={()=>setHovered(true)}
