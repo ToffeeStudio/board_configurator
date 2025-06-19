@@ -4,12 +4,14 @@ import {
   faGear,
   faKeyboard,
   faStethoscope,
+  faDisplay,
 } from '@fortawesome/free-solid-svg-icons';
 import {ConfigurePane} from '../components/panes/configure';
 import {Debug} from '../components/panes/debug';
 import {DesignTab} from '../components/panes/design';
 import {Settings} from '../components/panes/settings';
 import {Test} from '../components/panes/test';
+import {DisplayPane} from '../components/panes/display';
 import {ErrorsPaneConfig} from '../components/panes/errors';
 
 export default [
@@ -47,6 +49,13 @@ export default [
     component: Debug,
     path: '/debug',
     title: 'Debug',
+  },
+  {
+    key: 'display',
+    component: DisplayPane,
+    icon: faDisplay,
+    path: '/display',
+    title: 'Display',
   },
   ErrorsPaneConfig,
 ];

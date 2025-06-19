@@ -21,22 +21,22 @@ const brightenColor = (hex: string, percent: number) => {
 }
 
 interface GlowButtonProps {
-  buttonBackground: string;
-  buttonShadow: string;
-  buttonShineLeft: string;
-  buttonShineRight: string;
-  buttonGlowStart: string;
-  buttonGlowEnd: string;
+  $buttonBackground: string;
+  $buttonShadow: string;
+  $buttonShineLeft: string;
+  $buttonShineRight: string;
+  $buttonGlowStart: string;
+  $buttonGlowEnd: string;
 }
 
 export const GlowButton = styled.div<GlowButtonProps>`
-  --button-background: ${props => props.buttonBackground};
+  --button-background: ${props => props.$buttonBackground};
   --button-color: #fff;
-  --button-shadow: ${props => props.buttonShadow};
-  --button-shine-left: ${props => props.buttonShineLeft};
-  --button-shine-right: ${props => props.buttonShineRight};
-  --button-glow-start: ${props => props.buttonGlowStart};
-  --button-glow-end: ${props => props.buttonGlowEnd};
+  --button-shadow: ${props => props.$buttonShadow};
+  --button-shine-left: ${props => props.$buttonShineLeft};
+  --button-shine-right: ${props => props.$buttonShineRight};
+  --button-glow-start: ${props => props.$buttonGlowStart};
+  --button-glow-end: ${props => props.$buttonGlowEnd};
   --button-padding: 1px;
   --button-radius: 12px;
 
@@ -66,8 +66,8 @@ export const GlowButton = styled.div<GlowButtonProps>`
 `
 
 interface GlowButtonInnerProps {
-  forceOn?: boolean;
-  buttonBrightenedBackground: string;
+  $forceOn?: boolean;
+  $buttonBrightenedBackground: string;
 }
 
 export const GlowButtonInner = styled.div<GlowButtonInnerProps>`
@@ -78,7 +78,7 @@ export const GlowButtonInner = styled.div<GlowButtonInnerProps>`
   box-sizing: border-box;
   width: 100%;
   border-radius: calc(var(--button-radius) - var(--button-padding));
-  background-color: ${props=>props.forceOn ? props.buttonBrightenedBackground : "var(--button-background)"};
+  background-color: ${props=>props.$forceOn ? props.$buttonBrightenedBackground : "var(--button-background)"};
   overflow: hidden;
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 

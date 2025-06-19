@@ -1,0 +1,215 @@
+import {Buffer} from 'buffer';
+
+/**
+ * Command IDs for the custom module filesystem protocol.
+ */
+export enum CommandID {
+  MODULE_CMD_LS = 0x50,
+  MODULE_CMD_CD = 0x51,
+  MODULE_CMD_PWD = 0x52,
+  MODULE_CMD_RM = 0x53,
+  MODULE_CMD_MKDIR = 0x54,
+  MODULE_CMD_TOUCH = 0x55,
+  MODULE_CMD_CAT = 0x56,
+  MODULE_CMD_OPEN = 0x57,
+  MODULE_CMD_WRITE = 0x58,
+  MODULE_CMD_CLOSE = 0x59,
+  MODULE_CMD_FORMAT_FILESYSTEM = 0x5a,
+  MODULE_CMD_FLASH_REMAINING = 0x5b,
+  MODULE_CMD_CHOOSE_IMAGE = 0x5c,
+  MODULE_CMD_WRITE_DISPLAY = 0x5d,
+  MODULE_CMD_SET_TIME = 0x5e,
+  MODULE_CMD_LS_NEXT = 0x60,
+  MODULE_CMD_LS_ALL = 0x61,
+}
+
+/**
+ * Return codes from the custom module.
+ */
+export enum ReturnCode {
+  SUCCESS = 0x00,
+  IMAGE_ALREADY_EXISTS = 0xe1,
+  IMAGE_FLASH_FULL = 0xe2,
+  IMAGE_W_OOB = 0xe3,
+  IMAGE_H_OOB = 0xe4,
+  IMAGE_NAME_IN_USE = 0xe5,
+  IMAGE_NOT_FOUND = 0xe6,
+  IMAGE_NOT_OPEN = 0xe7,
+  IMAGE_PACKET_ID_ERR = 0xe8,
+  FLASH_REMAINING = 0xe9,
+  INVALID_COMMAND = 0xef,
+  MORE_ENTRIES = 0xea,
+}
+
+const PACKET_SIZE = 32;
+const MAGIC_BYTE = 0x09;
+const HEADER_SIZE = 6; // Magic (1) + Command (1) + Packet ID (4)
+const DATA_SIZE = PACKET_SIZE - HEADER_SIZE;
+
+/**
+ * A low-level class to handle raw HID packet communication with the custom device.
+ * Assumes it's initialized with a pre-authorized HIDDevice object from VIA.
+ */
+export class ToffeeHIDDevice {
+  private packetId: number = 0;
+
+  constructor(private webHidDevice: HIDDevice) {
+    if (!webHidDevice) {
+      throw new Error('ToffeeHIDDevice requires a valid HIDDevice object.');
+    }
+  }
+
+  /**
+   * Ensures the device connection is open before communication.
+   * This should be called before any send/receive operations.
+   */
+  public async open(): Promise<void> {
+    if (!this.webHidDevice.opened) {
+      await this.webHidDevice.open();
+    }
+  }
+
+  /**
+   * Closes the device connection.
+   */
+  public async close(): Promise<void> {
+    if (this.webHidDevice.opened) {
+      await this.webHidDevice.close();
+    }
+  }
+
+  /**
+   * Sends a structured packet to the device.
+   */
+  private async sendPacket(
+    commandId: CommandID,
+    data: Uint8Array = new Uint8Array(),
+  ): Promise<void> {
+    const buffer = new ArrayBuffer(PACKET_SIZE);
+    const view = new DataView(buffer);
+    const packet = new Uint8Array(buffer);
+
+    // Build header
+    view.setUint8(0, MAGIC_BYTE);
+    view.setUint8(1, commandId);
+    view.setUint32(2, this.packetId, true); // true for little-endian
+
+    // Copy data payload
+    packet.set(data, HEADER_SIZE);
+
+    console.log(
+      `Sending packet ${this.packetId} (CMD: 0x${commandId.toString(
+        16,
+      )}):`,
+      Buffer.from(packet).toString('hex'),
+    );
+    await this.webHidDevice.sendReport(0, packet);
+    this.packetId++;
+  }
+
+  /**
+   * Waits for and receives a single packet from the device.
+   */
+  private receivePacket(timeoutMs: number = 1500): Promise<Uint8Array> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        // Cleanup listener before rejecting
+        this.webHidDevice.removeEventListener('inputreport', listener);
+        reject(new Error(`HID read timed out after ${timeoutMs}ms.`));
+      }, timeoutMs);
+
+      const listener = (event: HIDInputReportEvent) => {
+        // Ensure the report is from the correct device and is not empty
+        if (event.device === this.webHidDevice && event.data.byteLength > 0) {
+          clearTimeout(timeout);
+          this.webHidDevice.removeEventListener('inputreport', listener);
+          const responseData = new Uint8Array(event.data.buffer);
+          console.log(
+            'Received response:',
+            Buffer.from(responseData).toString('hex'),
+          );
+          resolve(responseData);
+        }
+      };
+
+      this.webHidDevice.addEventListener('inputreport', listener);
+    });
+  }
+
+  /**
+   * Executes a command by sending a packet and waiting for a response.
+   */
+  public async executeCommand(
+    commandId: CommandID,
+    data?: Uint8Array,
+  ): Promise<[ReturnCode, Uint8Array]> {
+    await this.sendPacket(commandId, data);
+    try {
+      const response = await this.receivePacket();
+      const status = response[0] as ReturnCode;
+      const responseData = response.slice(1);
+      return [status, responseData];
+    } catch (e) {
+      console.error(`Error executing command 0x${commandId.toString(16)}:`, e);
+      return [ReturnCode.INVALID_COMMAND, new Uint8Array()];
+    }
+  }
+}
+
+/**
+ * A class to interact with the device's filesystem via the ToffeeHIDDevice.
+ */
+export class ToffeeFileSystemAPI {
+  constructor(private hid: ToffeeHIDDevice) {}
+
+  /**
+   * Lists the files in the current directory on the device.
+   * Handles pagination automatically.
+   */
+  public async ls(): Promise<string[]> {
+    const allEntries: string[] = [];
+    const decoder = new TextDecoder('utf-8');
+
+    const parseAndAddEntries = (data: Uint8Array) => {
+      const decoded = decoder.decode(data);
+      // Split by null characters and filter out any empty strings that result
+      const entries = decoded.split('\0').filter((e) => e.length > 0);
+      allEntries.push(...entries);
+    };
+
+    let [retCode, responseData] = await this.hid.executeCommand(
+      CommandID.MODULE_CMD_LS,
+    );
+
+    if (
+      retCode === ReturnCode.SUCCESS ||
+      retCode === ReturnCode.MORE_ENTRIES
+    ) {
+      parseAndAddEntries(responseData);
+    } else {
+      console.error(`ls command failed with code: 0x${retCode.toString(16)}`);
+      return [];
+    }
+
+    while (retCode === ReturnCode.MORE_ENTRIES) {
+      console.log('More entries to fetch, sending LS_NEXT...');
+      [retCode, responseData] = await this.hid.executeCommand(
+        CommandID.MODULE_CMD_LS_NEXT,
+      );
+
+      if (
+        retCode === ReturnCode.SUCCESS ||
+        retCode === ReturnCode.MORE_ENTRIES
+      ) {
+        parseAndAddEntries(responseData);
+      } else {
+        console.error(
+          `ls_next command failed with code: 0x${retCode.toString(16)}`,
+        );
+        break; // Exit loop on error
+      }
+    }
+
+    return allEntries;
+  }
+}

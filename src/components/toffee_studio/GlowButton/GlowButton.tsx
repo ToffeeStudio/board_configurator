@@ -77,17 +77,17 @@ export default ({onClick, children, forceOn, sx}: any) => {
       onClick={onClick}
       onMouseEnter={()=>setHovered(true)}
       onMouseLeave={()=>setHovered(false)}
-      buttonShineLeft={theme.glow[0]}
-      buttonShineRight={theme.glow[1]}
-      buttonGlowStart={theme.glow[2]}
-      buttonGlowEnd={theme.glow[3]}
-      buttonBackground={theme.glow[6]}
-      buttonShadow={theme.glow[7]}
+      $buttonShineLeft={theme.glow[0]}
+      $buttonShineRight={theme.glow[1]}
+      $buttonGlowStart={theme.glow[2]}
+      $buttonGlowEnd={theme.glow[3]}
+      $buttonBackground={theme.glow[6]}
+      $buttonShadow={theme.glow[7]}
     >
       <GlowButtonInner
         className="inner"
-        forceOn={forceOn}
-        buttonBrightenedBackground={brightenColor(theme.glow[6], 35)}
+        $forceOn={forceOn}
+        $buttonBrightenedBackground={brightenColor(theme.glow[6], 35)}
         style={sx}
       >
         {children}

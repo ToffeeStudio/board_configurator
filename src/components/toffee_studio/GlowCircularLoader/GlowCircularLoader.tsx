@@ -35,23 +35,23 @@ const GlowCircularLoader: React.FC<GlowCircularLoaderProps> = ({
 
   return (
     <LoaderWrapper
-      size={size}
-      gradientColorStart={gradientColorStart}
-      gradientColorEnd={gradientColorEnd}
-      animationDuration={animationDuration}
+      $size={size}
+      $gradientColorStart={gradientColorStart}
+      $gradientColorEnd={gradientColorEnd}
+      $animationDuration={animationDuration}
       style={sx}
     >
       {blurLevels.map((blur, index) => (
         <LoaderSpan
           key={index}
-          gradientColorStart={gradientColorStart}
-          gradientColorEnd={gradientColorEnd}
-          blurAmount={blur}
+          $gradientColorStart={gradientColorStart}
+          $gradientColorEnd={gradientColorEnd}
+          $blurAmount={blur}
         />
       ))}
       <LoaderInnerCutout
-        thickness={thickness}
-        innerBackgroundColor={finalInnerBgColor}
+        $thickness={thickness}
+        $innerBackgroundColor={finalInnerBgColor}
       />
     </LoaderWrapper>
   );
