@@ -1,4 +1,5 @@
 import {Buffer} from 'buffer';
+import {ToffeeCDC} from './cdc';
 
 /**
  * Command IDs for the custom module filesystem protocol.
@@ -135,6 +136,13 @@ export class ToffeeHIDDevice {
       this.webHidDevice.addEventListener('inputreport', listener);
     });
   }
+  /**
+   * Sends a packet without waiting for a response. Useful for trigger commands.
+   */
+  public async sendPacketOnly(commandId: CommandID, data?: Uint8Array): Promise<void> {
+    // This is a public wrapper for the private sendPacket method
+    await this.sendPacket(commandId, data);
+  }
 
   /**
    * Executes a command by sending a packet and waiting for a response.
@@ -212,4 +220,29 @@ export class ToffeeFileSystemAPI {
 
     return allEntries;
   }
+  /**
+   * Triggers the device to dump all files over CDC and receives them.
+   * @param cdc An active and connected ToffeeCDC instance.
+   * @returns A promise that resolves to an array of received files.
+   */
+  public async ls_all(cdc: ToffeeCDC): Promise<{ filename: string; data: Uint8Array }[]> {
+    console.log(`[ls_all] Sending command 0x${CommandID.MODULE_CMD_LS_ALL.toString(16)} via HID to trigger CDC dump...`);
+    
+    // 1. Send the HID command to trigger the CDC dump
+    await this.hid.sendPacketOnly(CommandID.MODULE_CMD_LS_ALL);
+    console.log('[ls_all] HID command sent.');
+
+    // 2. Wait for the device and OS to initialize the CDC transfer
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // 3. Check for CDC connection and start receiving files
+    if (!cdc.isConnected()) {
+        console.error("[ls_all] CDC port is not connected. Aborting file receive.");
+        return [];
+    }
+
+    console.log("[ls_all] CDC port is connected. Starting file reception...");
+    return await cdc.receiveFiles();
+  }
 }
+
