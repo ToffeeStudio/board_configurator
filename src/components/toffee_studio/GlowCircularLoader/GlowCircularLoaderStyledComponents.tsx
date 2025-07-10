@@ -1,6 +1,5 @@
 import styled, { keyframes } from 'styled-components';
 
-// Keyframes
 export const animate = keyframes`
   0% {
     transform: rotate(0deg);
@@ -10,7 +9,6 @@ export const animate = keyframes`
   }
 `;
 
-// Prop Interfaces
 export interface LoaderWrapperProps {
   $size: string;
   $gradientColorStart: string;
@@ -27,9 +25,10 @@ export interface LoaderSpanProps {
 export interface LoaderInnerCutoutProps {
   $thickness: string;
   $innerBackgroundColor: string;
+  $gradientColorStart: string;
+  $gradientColorEnd: string;
 }
 
-// Styled Components
 export const LoaderWrapper = styled.div<LoaderWrapperProps>`
   position: relative;
   width: ${(props) => props.$size};
@@ -57,4 +56,6 @@ export const LoaderInnerCutout = styled.div<LoaderInnerCutoutProps>`
   bottom: ${(props) => props.$thickness};
   background: ${(props) => props.$innerBackgroundColor};
   border-radius: 50%;
+  box-shadow: inset 0 0 7px ${(props) => props.$gradientColorStart},
+    inset 0 0 20px ${(props) => props.$gradientColorEnd};
 `;

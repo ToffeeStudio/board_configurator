@@ -93,7 +93,7 @@ const MenuComponent = React.memo((props: any) => (
         <VIACustomItem
           {...itemProps}
           updateValue={props.updateCustomMenuValue}
-          value={props.selectedCustomMenuData[itemProps.content[0]]}
+          value={props.selectedCustomMenuData?.[itemProps.content[0]]}
         />
       ))}
   </>

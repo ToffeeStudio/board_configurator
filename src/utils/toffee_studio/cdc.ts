@@ -65,6 +65,7 @@ export class ToffeeCDC {
     }
   }
 
+
   /**
    * Sends a file to the device using the (filename, size, data) protocol.
    * It acquires a writer, sends the data, and releases the writer.
@@ -74,7 +75,7 @@ export class ToffeeCDC {
       throw new Error('CDC port is not connected or not writable.');
     }
 
-    const writer = this.port.writable.getWriter(); // Lock is acquired here
+    const writer = this.port.writable.getWriter();
     try {
       console.log(`--- Starting file transfer for ${filename} ---`);
 
@@ -83,39 +84,35 @@ export class ToffeeCDC {
       const filenameBytes = textEncoder.encode(filename);
       const nullTerminatedFilename = new Uint8Array(filenameBytes.length + 1);
       nullTerminatedFilename.set(filenameBytes, 0);
-      nullTerminatedFilename[filenameBytes.length] = 0; // Null terminator
+      nullTerminatedFilename[filenameBytes.length] = 0;
 
-      console.log(
-        `Sending filename: ${filename} (${nullTerminatedFilename.byteLength} bytes)`,
-      );
+      console.log(`Sending filename: ${filename} (${nullTerminatedFilename.byteLength} bytes)`);
       await writer.write(nullTerminatedFilename);
-
-      // A small delay can help the firmware process the filename before the size arrives
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Crucial delay for firmware
 
       // 2. Send Size (4 bytes, Little Endian)
       const size = data.byteLength;
       const sizeBuffer = new ArrayBuffer(4);
       const sizeView = new DataView(sizeBuffer);
-      sizeView.setUint32(0, size, true); // `true` for little-endian
+      sizeView.setUint32(0, size, true); // true for little-endian
 
       console.log(`Sending size: ${size} bytes`);
       await writer.write(new Uint8Array(sizeBuffer));
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Crucial delay for firmware
 
-      // Another small delay
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // 3. Send Actual Data
-      console.log('Sending data block...');
-      await writer.write(data);
+      // 3. Send Actual Data in Chunks
+      console.log(`Sending data block (${data.length} bytes)...`);
+      const CHUNK_SIZE = 4096; // Same as working Python script
+      for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+        const chunk = data.subarray(i, i + CHUNK_SIZE);
+        await writer.write(chunk);
+      }
       console.log('--- File transfer complete ---');
     } catch (error) {
       console.error('Error during file send:', error);
-      // Abort the writer if an error occurs to prevent further issues
-      await writer.abort();
-      throw error; // Re-throw to be caught by the UI
+      await writer.abort().catch(() => {});
+      throw error;
     } finally {
-      // CRITICAL: Always release the lock when done.
       writer.releaseLock();
     }
   }

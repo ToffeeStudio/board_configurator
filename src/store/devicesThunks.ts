@@ -40,6 +40,10 @@ import {createRetry} from 'src/utils/retry';
 import {extractDeviceInfo, logAppError} from './errorsSlice';
 import {tryForgetDevice} from 'src/shims/node-hid';
 import {isAuthorizedDeviceConnected} from 'src/utils/type-predicates';
+import { ToffeeHIDDevice, ToffeeLightingAPI } from 'src/utils/toffee_studio/hid';
+import { TOFFEE_LIGHTING_MENU_TITLE } from 'src/utils/toffee_studio/constants';
+import { updateSelectedCustomMenuData } from './menusSlice';
+import { getHasToffeeUnderglowMenu } from './definitionsSlice';
 
 const selectConnectedDeviceRetry = createRetry(8, 100);
 
@@ -58,7 +62,7 @@ export const selectConnectedDeviceByPath =
 // Maybe not? the nice this about this is we don't have to null check the device
 const selectConnectedDevice =
   (connectedDevice: ConnectedDevice): AppThunk =>
-  async (dispatch) => {
+  async (dispatch, getState) => {
     const deviceInfo = extractDeviceInfo(connectedDevice);
     try {
       dispatch(selectDevice(connectedDevice));
@@ -67,7 +71,7 @@ const selectConnectedDevice =
       await dispatch(loadLayoutOptions());
 
       const {protocol} = connectedDevice;
-      try {
+try {
         if (protocol < 11) {
           // John you drongo, don't trust the compiler, dispatches are totes awaitable for async thunks
           await dispatch(updateLightingData(connectedDevice));
@@ -83,6 +87,46 @@ const selectConnectedDevice =
           }),
         );
       }
+
+      // --- Load Toffee Underglow State if applicable ---
+      const hasUnderglowMenu = getHasToffeeUnderglowMenu(getState());
+      if (hasUnderglowMenu) {
+        try {
+          const api = new KeyboardAPI(connectedDevice.path);
+          // Access the raw HID device to initialize our custom handler
+          const webHidDevice = (api.getHID() as any)._hidDevice?._device;
+
+          if (webHidDevice) {
+            const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
+            await toffeeDevice.open();
+            const lightingApi = new ToffeeLightingAPI(toffeeDevice);
+
+            const state = await lightingApi.getLightingState();
+            
+            // Map the received state to the keys defined in draft_definition.json
+            const menuData = {
+              'toffee_effect': [state.effect],
+              'toffee_speed': [state.speed],
+              'toffee_brightness': [state.brightness],
+              'toffee_color': [state.hue, state.saturation]
+            };
+
+            // Update the store proactively
+            dispatch(updateSelectedCustomMenuData({ 
+              menuData, 
+              devicePath: connectedDevice.path 
+            }));
+          }
+        } catch (e) {
+          dispatch(
+            logAppError({
+              message: 'Loading custom Toffee underglow data failed',
+              deviceInfo,
+            }),
+          );
+        }
+      }
+      // --- End Toffee Underglow State Load ---
 
       // John you drongo, don't trust the compiler, dispatches are totes awaitable for async thunks
       await dispatch(loadKeymapFromDevice(connectedDevice));

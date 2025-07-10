@@ -96,10 +96,14 @@ export const updateCustomMenuValue =
     );
 
     const api = getSelectedKeyboardAPI(state) as KeyboardAPI;
-    api.setCustomMenuValue(...rest.slice(0));
-
+    const TOFFEE_CHANNEL_ID = 99;
     const channel = rest[0];
-    api.commitCustomMenu(channel);
+
+    await api.setCustomMenuValue(...rest.slice(0));
+
+    if (channel !== TOFFEE_CHANNEL_ID) {
+      api.commitCustomMenu(channel);
+    }
   };
 
 // COMMON MENU IDENTIFIER RESOLVES INTO ACTUAL MODULE

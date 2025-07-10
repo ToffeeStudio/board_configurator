@@ -6,14 +6,14 @@ import {
   LoaderSpan,
   LoaderInnerCutout,
 } from './GlowCircularLoaderStyledComponents';
-import { Theme } from 'src/utils/themes'; // Assuming Theme type is exported
+import { Theme } from 'src/utils/themes';
 
 interface GlowCircularLoaderProps {
   size?: string;
   thickness?: string;
   animationDuration?: string;
   blurLevels?: string[];
-  colors?: [string, string]; // For gradient [start, end]
+  colors?: [string, string];
   innerBackgroundColor?: string;
   sx?: React.CSSProperties;
 }
@@ -27,10 +27,10 @@ const GlowCircularLoader: React.FC<GlowCircularLoaderProps> = ({
   innerBackgroundColor,
   sx,
 }) => {
-  const theme = useAppSelector(getSelectedTheme) as Theme; // Cast to Theme to access glow
+  const theme = useAppSelector(getSelectedTheme) as Theme;
 
-  const gradientColorStart = colors ? colors[0] : theme.glow[0]; // Default to theme.glow[2]
-  const gradientColorEnd = colors ? colors[1] : theme.glow[1];   // Default to theme.glow[3]
+  const gradientColorStart = colors ? colors[0] : theme.glow[0];
+  const gradientColorEnd = colors ? colors[1] : theme.glow[1];
   const finalInnerBgColor = innerBackgroundColor || 'black';
 
   return (
@@ -52,6 +52,8 @@ const GlowCircularLoader: React.FC<GlowCircularLoaderProps> = ({
       <LoaderInnerCutout
         $thickness={thickness}
         $innerBackgroundColor={finalInnerBgColor}
+        $gradientColorStart={gradientColorStart}
+        $gradientColorEnd={gradientColorEnd}
       />
     </LoaderWrapper>
   );

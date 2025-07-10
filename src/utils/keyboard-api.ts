@@ -1,3 +1,4 @@
+import { ToffeeHIDDevice, ToffeeLightingAPI, CommandID, ReturnCode } from './toffee_studio/hid';
 import type {Device, Keymap} from '../types/types';
 import type {LightingValue, MatrixInfo} from '@the-via/reader';
 import {logCommand} from './command-logger';
@@ -10,6 +11,9 @@ import {
   logAppError,
   logKeyboardAPIError,
 } from 'src/store/errorsSlice';
+
+// Toffee Custom IDs
+const TOFFEE_CHANNEL_ID = 99;
 
 // VIA Command IDs
 
@@ -88,7 +92,7 @@ export const PROTOCOL_ALPHA = 7;
 export const PROTOCOL_BETA = 8;
 export const PROTOCOL_GAMMA = 9;
 
-const cache: {[addr: string]: {hid: any}} = {};
+const cache: {[addr: string]: {hid: any, toffeeHid: ToffeeHIDDevice | null}} = {};
 
 const eqArr = <T>(arr1: T[], arr2: T[]) => {
   if (arr1.length !== arr2.length) {
@@ -150,8 +154,22 @@ export class KeyboardAPI {
     this.kbAddr = path;
     if (!cache[path]) {
       const device = initAndConnectDevice({path});
-      cache[path] = {hid: device};
+      const rawDevice = (device as any)._hidDevice?._device;
+      const toffeeHid = rawDevice ? new ToffeeHIDDevice(rawDevice) : null;
+      cache[path] = {hid: device, toffeeHid};
     }
+  }
+
+  async getUnderglowState(): Promise<{ effect: number; speed: number; brightness: number; hue: number; saturation: number; } | null> {
+    const { toffeeHid } = cache[this.kbAddr];
+    if (!toffeeHid) {
+      console.error("ToffeeHIDDevice not available for getUnderglowState");
+      return null;
+    }
+    
+    await toffeeHid.open();
+    const lightingApi = new ToffeeLightingAPI(toffeeHid);
+    return await lightingApi.getLightingState();
   }
 
   refresh(kbAddr: HIDAddress) {
@@ -353,6 +371,44 @@ export class KeyboardAPI {
   }
 
   async setCustomMenuValue(...args: number[]): Promise<void> {
+    const channelId = args[0];
+
+    if (channelId === TOFFEE_CHANNEL_ID) {
+      console.log('Intercepted Toffee channel. Routing to ToffeeLightingAPI.');
+      
+      const { toffeeHid } = cache[this.kbAddr];
+      if (!toffeeHid) {
+        throw new Error("ToffeeHIDDevice is not available in the cache.");
+      }
+
+      await toffeeHid.open();
+      const lightingApi = new ToffeeLightingAPI(toffeeHid);
+      
+      const commandId = args[1];
+      const payload = args.slice(2);
+
+      // Route the command to the correct method
+      switch (commandId) {
+        case CommandID.MODULE_CMD_SET_ANIMATION:
+          await lightingApi.setAnimation(payload[0]);
+          break;
+        case CommandID.MODULE_CMD_SET_SPEED:
+          await lightingApi.setSpeed(payload[0]);
+          break;
+        case CommandID.MODULE_CMD_SET_BRIGHTNESS:
+          await lightingApi.setBrightness(payload[0]);
+          break;
+        case CommandID.MODULE_CMD_SET_COLOR_HS:
+          await lightingApi.setColor(payload[0], payload[1]);
+          break;
+        default:
+          console.error(`Unhandled Toffee command ID: 0x${commandId.toString(16)}`);
+          break;
+      }
+      return; // Stop execution here.
+    }
+
+    // This is the original logic for all other standard VIA channels
     await this.hidCommand(APICommand.CUSTOM_MENU_SET_VALUE, args);
   }
 

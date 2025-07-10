@@ -1,3 +1,4 @@
+import { TOFFEE_LIGHTING_MENU_TITLE } from 'src/utils/toffee_studio/constants';
 import {createSelector, createSlice, PayloadAction} from '@reduxjs/toolkit';
 import type {
   AuthorizedDevice,
@@ -384,3 +385,16 @@ export const reloadDefinitions =
       ),
     );
   };
+
+export const getHasToffeeUnderglowMenu = createSelector(
+  getSelectedDefinition,
+  (definition) => {
+    if (!definition || !('menus' in definition) || !definition.menus) {
+      return false;
+    }
+    // Check if any menu in the definition matches our custom title
+    return definition.menus.some(menu => 
+      typeof menu === 'object' && menu.label === TOFFEE_LIGHTING_MENU_TITLE
+    );
+  }
+);

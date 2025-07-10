@@ -20,13 +20,13 @@ import * as Macros from './configure-panes/macros';
 import * as SaveLoad from './configure-panes/save-load';
 import * as Layouts from './configure-panes/layouts';
 import * as RotaryEncoder from './configure-panes/custom/satisfaction75';
-import {makeCustomMenus} from './configure-panes/custom/menu-generator';
+import {makeCustomMenu, makeCustomMenus} from './configure-panes/custom/menu-generator';
 import {LayerControl} from './configure-panes/layer-control';
 import {Badge} from './configure-panes/badge';
 import GlowButton from '../toffee_studio/GlowButton/GlowButton';
 import GlowCircularLoader from '../toffee_studio/GlowCircularLoader/GlowCircularLoader';
 import GlowTooltip from '../toffee_studio/GlowTooltip/GlowTooltip';
-import {useAppSelector} from 'src/store/hooks';
+import {useAppSelector, useAppDispatch} from 'src/store/hooks';
 import {getSelectedDefinition} from 'src/store/definitionsSlice';
 import {
   clearSelectedKey,
@@ -34,13 +34,11 @@ import {
   getNumberOfLayers,
   setConfigureKeyboardIsSelectable,
 } from 'src/store/keymapSlice';
-import {useDispatch} from 'react-redux';
 import {reloadConnectedDevices} from 'src/store/devicesThunks';
 import {getV3MenuComponents} from 'src/store/menusSlice';
 import {getIsMacroFeatureSupported} from 'src/store/macrosSlice';
 import {getConnectedDevices, getSupportedIds, setForceAuthorize} from 'src/store/devicesSlice';
 import {isElectron} from 'src/utils/running-context';
-import {useAppDispatch} from 'src/store/hooks';
 import {MenuTooltip} from '../inputs/tooltip';
 import {getRenderMode, getSelectedTheme} from 'src/store/settingsSlice';
 
@@ -76,31 +74,6 @@ function getCustomPanes(customFeatures: CustomFeaturesV2[]) {
   }
   return [];
 }
-
-const getRowsForKeyboard = (): typeof Rows => {
-  const showMacros = useAppSelector(getIsMacroFeatureSupported);
-  const v3Menus = useAppSelector(getV3MenuComponents);
-  const selectedDefinition = useAppSelector(getSelectedDefinition);
-  const numberOfLayers = useAppSelector(getNumberOfLayers);
-
-  if (!selectedDefinition) {
-    return [];
-  } else if (isVIADefinitionV2(selectedDefinition)) {
-    return getRowsForKeyboardV2(selectedDefinition, showMacros, numberOfLayers);
-  } else if (isVIADefinitionV3(selectedDefinition)) {
-    return [
-      ...filterInferredRows(selectedDefinition, showMacros, numberOfLayers, [
-        Keycode,
-        Layouts,
-        Macros,
-        SaveLoad,
-      ]),
-      ...v3Menus,
-    ];
-  } else {
-    return [];
-  }
-};
 
 const filterInferredRows = (
   selectedDefinition: VIADefinitionV3 | VIADefinitionV2,
@@ -152,6 +125,31 @@ const getRowsForKeyboardV2 = (
     numberOfLayers,
     rows,
   );
+};
+
+const getRowsForKeyboard = (): typeof Rows => {
+  const showMacros = useAppSelector(getIsMacroFeatureSupported);
+  const v3Menus = useAppSelector(getV3MenuComponents);
+  const selectedDefinition = useAppSelector(getSelectedDefinition);
+  const numberOfLayers = useAppSelector(getNumberOfLayers);
+
+  if (!selectedDefinition) {
+    return [];
+  } else if (isVIADefinitionV2(selectedDefinition)) {
+    return getRowsForKeyboardV2(selectedDefinition, showMacros, numberOfLayers);
+  } else if (isVIADefinitionV3(selectedDefinition)) {
+    return [
+      ...filterInferredRows(selectedDefinition, showMacros, numberOfLayers, [
+        Keycode,
+        Layouts,
+        Macros,
+        SaveLoad,
+      ]),
+      ...v3Menus,
+    ];
+  } else {
+    return [];
+  }
 };
 
 const Loader: React.FC<{
@@ -237,7 +235,7 @@ export const ConfigurePane = () => {
 };
 
 const ConfigureGrid = () => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [selectedRow, setRow] = useState(0);
   const KeyboardRows = getRowsForKeyboard();

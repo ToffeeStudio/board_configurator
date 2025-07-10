@@ -76,7 +76,7 @@ const getRangeBytes = (value: number, max: number) => {
 };
 
 const VIACustomControl = (props: VIACustomControlProps) => {
-  const {content, type, options, value} = props as any;
+  const {content, type, options, value = []} = props as any;
   const [name, ...command] = content;
   switch (type) {
     case 'button': {

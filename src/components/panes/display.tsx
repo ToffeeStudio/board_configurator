@@ -7,10 +7,11 @@ import {
 } from 'src/store/devicesSlice';
 import {
   ToffeeFileSystemAPI,
+  ToffeeLightingAPI,
   ToffeeHIDDevice,
 } from 'src/utils/toffee_studio/hid';
 import {ToffeeCDC} from 'src/utils/toffee_studio/cdc';
-import {processFileToRaw, convertRawToPngDataUrl} from 'src/utils/toffee_studio/imageProcessor';
+import {processImageToRGB565, convertRawToPngDataUrl} from 'src/utils/toffee_studio/imageProcessor';
 import {Buffer} from 'buffer';
 
 const DisplayPaneContainer = styled.div`
@@ -153,10 +154,17 @@ export const DisplayPane: React.FC = () => {
     setTargetFilename('');
 
     try {
-      const imageData = await processImageToRGB565(file);
-      const filename =
-        file.name.substring(0, file.name.lastIndexOf('.')) + '.raw';
+      const imageData = await processImageToRGB565(file); // This uses our new function
+      const isGif = file.type === 'image/gif';
+      const extension = isGif ? '.araw' : '.raw';
 
+      // --- NEW: Sanitize filename to match Python script's behavior ---
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.') || file.name.length);
+      // Replace non-alphanumeric with underscore, limit length to 50
+      const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+      // --- END NEW ---
+
+      const filename = sanitizedBaseName + extension;
       setProcessedImageData(imageData);
       setTargetFilename(filename);
 
@@ -171,7 +179,7 @@ export const DisplayPane: React.FC = () => {
       alert(`Image processed successfully! Ready to send as ${filename}.`);
     } catch (error) {
       console.error('Failed to process image:', error);
-      alert(`Error processing image: ${error}`);
+      alert(`Error processing image: ${error as any}`);
     }
   };
 
@@ -240,9 +248,74 @@ export const DisplayPane: React.FC = () => {
     }
   };
 
+  const handleSetAnimationClick = async () => {
+    if (!keyboardAPI || !selectedDevice) return alert('Device not connected.');
+    try {
+      const webHidDevice = (keyboardAPI.getHID() as any)._hidDevice._device;
+      const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
+      await toffeeDevice.open();
+      const lightingApi = new ToffeeLightingAPI(toffeeDevice);
+      await lightingApi.setAnimation(1); // Set to animation ID 1 (Breathing)
+      alert('Set animation to Breathing (1)');
+    } catch (e) {
+      alert(`Error: ${e}`);
+    }
+  };
+
+  const handleSetSpeedClick = async () => {
+    if (!keyboardAPI || !selectedDevice) return alert('Device not connected.');
+    try {
+      const webHidDevice = (keyboardAPI.getHID() as any)._hidDevice._device;
+      const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
+      await toffeeDevice.open();
+      const lightingApi = new ToffeeLightingAPI(toffeeDevice);
+      await lightingApi.setSpeed(128); // Set speed to medium
+      alert('Set speed to 128');
+    } catch (e) {
+      alert(`Error: ${e}`);
+    }
+  };
+
+  const handleSetBrightnessClick = async () => {
+    if (!keyboardAPI || !selectedDevice) return alert('Device not connected.');
+    try {
+      const webHidDevice = (keyboardAPI.getHID() as any)._hidDevice._device;
+      const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
+      await toffeeDevice.open();
+      const lightingApi = new ToffeeLightingAPI(toffeeDevice);
+      await lightingApi.setBrightness(150); // Set brightness to ~60%
+      alert('Set brightness to 150');
+    } catch (e) {
+      alert(`Error: ${e}`);
+    }
+  };
+
+  const handleSetColorClick = async () => {
+    if (!keyboardAPI || !selectedDevice) return alert('Device not connected.');
+    try {
+      const webHidDevice = (keyboardAPI.getHID() as any)._hidDevice._device;
+      const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
+      await toffeeDevice.open();
+      const lightingApi = new ToffeeLightingAPI(toffeeDevice);
+      await lightingApi.setColor(212, 255);
+      alert('Set color to Purple (H:212, S:255)');
+    } catch (e) {
+      alert(`Error: ${e}`);
+    }
+  };
+
   return (
     <DisplayPaneContainer>
       <h1>Display Experimentation Page</h1>
+      <div style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+        <h2>Lighting Control (Test Buttons)</h2>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+          <button onClick={handleSetAnimationClick}>Set Anim to Breathing (1)</button>
+          <button onClick={handleSetSpeedClick}>Set Speed to 128</button>
+          <button onClick={handleSetBrightnessClick}>Set Brightness to 150</button>
+          <button onClick={handleSetColorClick}>Set Color to Purple</button>
+        </div>
+      </div>
       <p>Status: {keyboardAPI ? 'Connected' : 'Disconnected'}</p>
       <button onClick={handleTestButtonClick}>LS COMMAND TEST</button>
 

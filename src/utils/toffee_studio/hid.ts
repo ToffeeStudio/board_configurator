@@ -22,6 +22,12 @@ export enum CommandID {
   MODULE_CMD_SET_TIME = 0x5e,
   MODULE_CMD_LS_NEXT = 0x60,
   MODULE_CMD_LS_ALL = 0x61,
+  // New Lighting Commands
+  MODULE_CMD_SET_ANIMATION = 0x71,
+  MODULE_CMD_SET_SPEED = 0x72,
+  MODULE_CMD_SET_BRIGHTNESS = 0x74,
+  MODULE_CMD_SET_COLOR_HS = 0x75,
+  MODULE_CMD_GET_LIGHTING_STATE = 0x76,
 }
 
 /**
@@ -246,3 +252,70 @@ export class ToffeeFileSystemAPI {
   }
 }
 
+
+/**
+ * A class to interact with the device's lighting system via the ToffeeHIDDevice.
+ */
+export class ToffeeLightingAPI {
+  constructor(private hid: ToffeeHIDDevice) {}
+
+  /**
+   * Sets the lighting animation effect.
+   * @param effectId The ID of the animation (0-9).
+   */
+  public async setAnimation(effectId: number): Promise<void> {
+    const payload = new Uint8Array([effectId]);
+    // Changed to executeCommand to wait for a response, creating a natural delay.
+    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_ANIMATION, payload);
+  }
+
+  /**
+   * Sets the lighting animation speed.
+   * @param speed The speed value (0-255).
+   */
+  public async setSpeed(speed: number): Promise<void> {
+    const payload = new Uint8Array([speed]);
+    // Changed to executeCommand to wait for a response.
+    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_SPEED, payload);
+  }
+
+  /**
+   * Sets the lighting brightness.
+   * @param brightness The brightness value (0-255).
+   */
+  public async setBrightness(brightness: number): Promise<void> {
+    const payload = new Uint8Array([brightness]);
+    // Changed to executeCommand to wait for a response.
+    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_BRIGHTNESS, payload);
+  }
+
+  /**
+   * Sets the lighting color (Hue and Saturation).
+   * @param hue The hue value (0-255).
+   * @param saturation The saturation value (0-255).
+   */
+  public async setColor(hue: number, saturation: number): Promise<void> {
+    const payload = new Uint8Array([hue, saturation]);
+    // Changed to executeCommand to wait for a response.
+    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_COLOR_HS, payload);
+  }
+  /**
+   * Gets the entire current lighting state from the device.
+   * @returns A promise that resolves to an object with the lighting state.
+   */
+  public async getLightingState(): Promise<{ effect: number; speed: number; brightness: number; hue: number; saturation: number; }> {
+    const [status, responseData] = await this.hid.executeCommand(CommandID.MODULE_CMD_GET_LIGHTING_STATE);
+    console.log(`[ToffeeLightingAPI] Raw Response for GET_LIGHTING_STATE - Status: 0x${status.toString(16)}, Data:`, responseData);
+    if (status !== ReturnCode.SUCCESS || responseData.length < 5) {
+      throw new Error(`Failed to get lighting state. Status: ${status}`);
+    }
+    // Response payload is: [effect, speed, brightness, hue, sat]
+    return {
+      effect: responseData[0],
+      speed: responseData[1],
+      brightness: responseData[2],
+      hue: responseData[3],
+      saturation: responseData[4],
+    };
+  }
+}
