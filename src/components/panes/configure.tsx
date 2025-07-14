@@ -20,7 +20,7 @@ import * as Macros from './configure-panes/macros';
 import * as SaveLoad from './configure-panes/save-load';
 import * as Layouts from './configure-panes/layouts';
 import * as RotaryEncoder from './configure-panes/custom/satisfaction75';
-import {makeCustomMenu, makeCustomMenus} from './configure-panes/custom/menu-generator';
+import {makeCustomMenus} from './configure-panes/custom/menu-generator';
 import {LayerControl} from './configure-panes/layer-control';
 import {Badge} from './configure-panes/badge';
 import GlowButton from '../toffee_studio/GlowButton/GlowButton';
