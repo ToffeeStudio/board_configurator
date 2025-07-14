@@ -72,7 +72,7 @@ function itemGenerator(
 ): any {
   if (
     'showIf' in elem &&
-    !evalExpr(elem.showIf as string, props.selectedCustomMenuData)
+    !evalExpr(elem.showIf as string, props.selectedCustomMenuData || {})
   ) {
     return [];
   }
@@ -108,7 +108,7 @@ function submenuGenerator(
 ): any {
   if (
     'showIf' in elem &&
-    !evalExpr(elem.showIf as string, props.selectedCustomMenuData)
+    !evalExpr(elem.showIf as string, props.selectedCustomMenuData || {})
   ) {
     return [];
   }
