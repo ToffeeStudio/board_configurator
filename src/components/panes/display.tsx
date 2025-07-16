@@ -74,20 +74,44 @@ export const DisplayPane: React.FC = () => {
     dispatch(disconnectCdcPort());
   };
 
-  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('No file selected.');
+      return;
+    }
 
+    console.log(`Processing image: ${file.name}`);
     setProcessedImageData(null);
     setTargetFilename('');
+
     try {
-      const imageData = await processImageToRGB565(file);
-      const filename = file.name.substring(0, file.name.lastIndexOf('.')) + '.raw';
+      const imageData = await processImageToRGB565(file); // This will now handle both static and gif
+      const isGif = file.type === 'image/gif';
+      const extension = isGif ? '.araw' : '.raw';
+
+      // Sanitize filename to match Python script's behavior
+      const baseName = file.name.substring(0, file.name.lastIndexOf('.') || file.name.length);
+      const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
+
+      const filename = sanitizedBaseName + extension;
       setProcessedImageData(imageData);
       setTargetFilename(filename);
+
+      console.log('--- Image Processing Complete ---');
+      console.log('Target Filename:', filename);
+      console.log('Processed Data Byte Length:', imageData.byteLength);
+      console.log(
+        'First 32 bytes (hex):',
+        Buffer.from(imageData.slice(0, 32)).toString('hex'),
+      );
+      console.log('-------------------------------');
       alert(`Image processed successfully! Ready to send as ${filename}.`);
     } catch (error) {
-      alert(`Error processing image: ${error}`);
+      console.error('Failed to process image:', error);
+      alert(`Error processing image: ${error as any}`);
     }
   };
 
