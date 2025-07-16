@@ -8,6 +8,7 @@ import lightingReducer from './lightingSlice';
 import menusReducer from './menusSlice';
 import designReducer from './designSlice';
 import errorsReducer from './errorsSlice';
+import cdcReducer from './cdcSlice';
 import {errorsListenerMiddleware} from './errorsListener';
 
 export const store = configureStore({
@@ -20,6 +21,7 @@ export const store = configureStore({
     lighting: lightingReducer,
     menus: menusReducer,
     design: designReducer,
+    cdc: cdcReducer,
     errors: errorsReducer,
   },
   middleware: (getDefaultMiddleware) =>

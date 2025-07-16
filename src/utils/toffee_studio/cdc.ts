@@ -221,3 +221,5 @@ export class ToffeeCDC {
     return receivedFiles;
   }
 }
+
+export const cdcInstance = new ToffeeCDC();
