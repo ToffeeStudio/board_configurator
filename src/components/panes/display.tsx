@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useAppDispatch, useAppSelector } from 'src/store/hooks';
 import { getSelectedKeyboardAPI, getSelectedConnectedDevice } from 'src/store/devicesSlice';
@@ -39,6 +39,41 @@ export const DisplayPane: React.FC = () => {
   const keyboardAPI = useAppSelector(getSelectedKeyboardAPI);
   const selectedDevice = useAppSelector(getSelectedConnectedDevice);
   const cdcStatus = useAppSelector(getCdcStatus);
+
+
+  const [lightingState, setLightingState] = useState<{
+    effect: number;
+    speed: number;
+    brightness: number;
+    hue: number;
+    saturation: number;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchLightingState = async () => {
+      if (!keyboardAPI) {
+        setLightingState(null); // Clear state if keyboard disconnects
+        return;
+      }
+      try {
+        const webHidDevice = (keyboardAPI.getHID() as any)._hidDevice._device;
+        const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
+        await toffeeDevice.open();
+        const lightingApi = new ToffeeLightingAPI(toffeeDevice);
+
+        console.log("Fetching initial lighting state for display...");
+        const currentState = await lightingApi.getLightingState();
+        setLightingState(currentState);
+        console.log("State received:", currentState);
+
+      } catch (e) {
+        console.error("Failed to get lighting state:", e);
+        setLightingState(null); // Set to null on error
+      }
+    };
+
+    fetchLightingState();
+  }, [keyboardAPI]); // This effect re-runs whenever the keyboardAPI object changes
 
   const [processedImageData, setProcessedImageData] = useState<Uint8Array | null>(null);
   const [targetFilename, setTargetFilename] = useState<string>('');
@@ -201,21 +236,19 @@ export const DisplayPane: React.FC = () => {
       await toffeeDevice.open();
       const lightingApi = new ToffeeLightingAPI(toffeeDevice);
       await lightingApi.setBrightness(150); // Set brightness to ~60%
-      alert('Set brightness to 150');
     } catch (e) {
       alert(`Error: ${e}`);
     }
   };
 
-  const handleSetColorClick = async () => {
+  const handleSetColorClick = async (a: any, b: any) => {
     if (!keyboardAPI || !selectedDevice) return alert('Device not connected.');
     try {
       const webHidDevice = (keyboardAPI.getHID() as any)._hidDevice._device;
       const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
       await toffeeDevice.open();
       const lightingApi = new ToffeeLightingAPI(toffeeDevice);
-      await lightingApi.setColor(212, 255);
-      alert('Set color to Purple (H:212, S:255)');
+      await lightingApi.setColor(a, b);
     } catch (e) {
       alert(`Error: ${e}`);
     }
@@ -231,10 +264,32 @@ export const DisplayPane: React.FC = () => {
           <button onClick={handleSetAnimationClick}>Set Anim to Breathing (1)</button>
           <button onClick={handleSetSpeedClick}>Set Speed to 128</button>
           <button onClick={handleSetBrightnessClick}>Set Brightness to 150</button>
-          <button onClick={handleSetColorClick}>Set Color to Purple</button>
+          <button onClick={()=>handleSetColorClick(212, 255)}>Set Color to Purple</button>
+          <button onClick={()=>handleSetColorClick(0, 255)}>Set Color to Red</button>
         </div>
       </div>
       <p>Status: {keyboardAPI ? 'Connected' : 'Disconnected'}</p>
+      <div style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+        <h2>Live Underglow State</h2>
+        {lightingState ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div
+              style={{
+                width: '50px',
+                height: '50px',
+                backgroundColor: `hsl(${lightingState.hue * 360 / 255}, ${lightingState.saturation * 100 / 255}%, 50%)`,
+                border: '1px solid white',
+              }}
+              title={`Hue: ${lightingState.hue}, Sat: ${lightingState.saturation}`}
+            />
+            <pre style={{ margin: 0, padding: 0, whiteSpace: 'pre-wrap' }}>
+              {JSON.stringify(lightingState, null, 2)}
+            </pre>
+          </div>
+        ) : (
+          <p>Fetching lighting state... (ensure a compatible keyboard is connected)</p>
+        )}
+      </div>
       <button onClick={handleTestButtonClick}>LS COMMAND TEST</button>
       <hr />
       <h2>CDC/Serial Communication</h2>
