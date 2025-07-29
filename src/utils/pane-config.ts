@@ -5,6 +5,7 @@ import {
   faKeyboard,
   faStethoscope,
   faDisplay,
+  faLightbulb,
 } from '@fortawesome/free-solid-svg-icons';
 import {ConfigurePane} from '../components/panes/configure';
 import {Debug} from '../components/panes/debug';
@@ -13,6 +14,7 @@ import {Settings} from '../components/panes/settings';
 import {Test} from '../components/panes/test';
 import {DisplayPane} from '../components/panes/display';
 import {ErrorsPaneConfig} from '../components/panes/errors';
+import {ToffeeLighting} from '../components/panes/toffee-lighting';
 
 export default [
   {
@@ -56,6 +58,13 @@ export default [
     icon: faDisplay,
     path: '/display',
     title: 'Display',
+  },
+  {
+    key: 'toffee-lighting',
+    component: ToffeeLighting,
+    icon: faLightbulb,
+    path: '/toffee-lighting',
+    title: 'Toffee Lighting',
   },
   ErrorsPaneConfig,
 ];
