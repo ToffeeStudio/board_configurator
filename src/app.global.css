@@ -112,7 +112,7 @@ html[data-theme-mode='light'] {
 #root {
   background: var(--bg_gradient);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100%;
 }
 @font-face {

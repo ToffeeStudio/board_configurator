@@ -8,6 +8,7 @@ interface TooltipBoxProps {
 }
 
 export const TooltipWrapper = styled.div`
+  width: 100%;
   position: relative;
   display: inline-block;
 `;

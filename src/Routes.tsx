@@ -25,12 +25,22 @@ import {
   isKeyboardDefinitionV3, // Import V3 validation
   keyboardDefinitionV3ToVIADefinitionV3, // Import V3 transformation
 } from '@the-via/reader';
+import styled from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
   *:focus {
     outline: none;
   }
 `;
+
+const MainContent = styled.div`
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+`
 
 export default () => {
   const hasHIDSupport = 'hid' in navigator || OVERRIDE_HID_CHECK;
@@ -100,9 +110,10 @@ export default () => {
       <TestContext.Provider value={testContextState}>
         <GlobalStyle />
         {hasHIDSupport && <UnconnectedGlobalMenu />}
-        <CanvasRouter />
-
-        <Home hasHIDSupport={hasHIDSupport}>{RouteComponents}</Home>
+        <MainContent>
+          <CanvasRouter />
+          <Home hasHIDSupport={hasHIDSupport}>{RouteComponents}</Home>
+        </MainContent>
       </TestContext.Provider>
     </>
   );
