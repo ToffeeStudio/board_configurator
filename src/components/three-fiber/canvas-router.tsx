@@ -1,4 +1,3 @@
-import {faSpinner, faUnlock} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {a, config, useSpring} from '@react-spring/three';
 import {
@@ -18,7 +17,6 @@ import {
   getCustomDefinitions,
   getSelectedDefinition,
 } from 'src/store/definitionsSlice';
-import {reloadConnectedDevices} from 'src/store/devicesThunks';
 import {useAppDispatch, useAppSelector} from 'src/store/hooks';
 import {
   getConfigureKeyboardIsSelectable,
@@ -33,12 +31,10 @@ import {OVERRIDE_HID_CHECK} from 'src/utils/override';
 import {useSize} from 'src/utils/use-size';
 import {Object3D, SpotLight as ThreeSpotLight} from 'three';
 import {useLocation} from 'wouter';
-import {AccentButtonLarge} from '../inputs/accent-button';
 import {ConfigureKeyboard} from '../n-links/keyboard/configure';
 import {Design} from '../n-links/keyboard/design';
 import {Test} from '../n-links/keyboard/test';
 import {Camera} from './camera';
-import {LoaderCubey} from './loader-cubey';
 import {UpdateUVMaps} from './update-uv-maps';
 
 useGLTF.preload(cubeySrc, true, true);
@@ -151,45 +147,6 @@ export const NonSuspenseCanvasRouter = () => {
           />
           <OrbitControls enabled={false} />
           <Camera />
-          <LoaderCubey
-            theme={theme}
-            visible={hideTerrainBG && !selectedDefinition}
-          />
-          <Html
-            center
-            position={[
-              0,
-              hideTerrainBG ? (!selectedDefinition ? -1 : 0) : 10,
-              -19,
-            ]}
-          >
-            {showAuthorizeButton ? (
-              !selectedDefinition ? (
-                <AccentButtonLarge
-                  onClick={() => dispatch(reloadConnectedDevices())}
-                  style={{width: 'max-content'}}
-                >
-                  Authorize device
-                  <FontAwesomeIcon
-                    style={{marginLeft: '10px'}}
-                    icon={faUnlock}
-                  />
-                </AccentButtonLarge>
-              ) : (
-                <>
-                  <div
-                    style={{
-                      textAlign: 'center',
-                      color: 'var(--color_accent)',
-                      fontSize: 60,
-                    }}
-                  >
-                    <FontAwesomeIcon spinPulse icon={faSpinner} />
-                  </div>
-                </>
-              )
-            ) : null}
-          </Html>
           <KeyboardGroup
             containerRef={containerRef}
             configureKeyboardIsSelectable={configureKeyboardIsSelectable}

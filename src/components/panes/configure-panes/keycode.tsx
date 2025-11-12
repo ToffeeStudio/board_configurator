@@ -21,7 +21,7 @@ import {
   isVIADefinitionV2,
   VIADefinitionV3,
 } from '@the-via/reader';
-import {OverflowCell, SubmenuOverflowCell, SubmenuRow} from '../grid';
+import {OverflowCell, SubmenuOverflowCell, SubmenuRow, SpanOverflowCell} from '../grid';
 import {useAppDispatch, useAppSelector} from 'src/store/hooks';
 import {
   getBasicKeyToByte,
@@ -52,8 +52,21 @@ const KeycodeList = styled.div`
   grid-gap: 10px;
 `;
 
+const KeycodePaneContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+`;
+
 const MenuContainer = styled.div`
-  padding: 15px 20px 20px 10px;
+  display: flex;
+  background-color: pink;
+  flex-direction: row;
+  gap: 10px;
+  padding: 15px 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  border-bottom: 1px solid var(--border_color_cell);
 `;
 
 const Keycode = styled(Button)<{disabled: boolean}>`
@@ -356,16 +369,16 @@ export const KeycodePane: FC = () => {
   )?.keycodes as IKeycode[];
 
   return (
-    <>
-      <SubmenuOverflowCell>{renderCategories()}</SubmenuOverflowCell>
-      <OverflowCell>
+    <SpanOverflowCell>
+      <KeycodePaneContainer>
+        {renderCategories()}
         <KeycodeContainer>
           {renderSelectedCategory(selectedCategoryKeycodes, selectedCategory)}
         </KeycodeContainer>
         <KeycodeDesc>{mouseOverDesc}</KeycodeDesc>
-        {showKeyTextInputModal && renderKeyInputModal()}
-      </OverflowCell>
-    </>
+      </KeycodePaneContainer>
+      {showKeyTextInputModal && renderKeyInputModal()}
+    </SpanOverflowCell>
   );
 };
 

@@ -1,10 +1,7 @@
 import React, {useState, useEffect} from 'react';
-import {faPlus} from '@fortawesome/free-solid-svg-icons';
 import styled from 'styled-components';
 import ChippyLoader from '../chippy-loader';
-import LoadingText from '../loading-text';
 import {CenterPane, ConfigureBasePane} from './pane';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {
   CustomFeaturesV2,
   getLightingDefinition,
@@ -23,8 +20,6 @@ import * as RotaryEncoder from './configure-panes/custom/satisfaction75';
 import {makeCustomMenus} from './configure-panes/custom/menu-generator';
 import {LayerControl} from './configure-panes/layer-control';
 import {Badge} from './configure-panes/badge';
-import GlowButton from '../toffee_studio/GlowButton/GlowButton';
-import GlowCircularLoader from '../toffee_studio/GlowCircularLoader/GlowCircularLoader';
 import GlowTooltip from '../toffee_studio/GlowTooltip/GlowTooltip';
 import {useAppSelector} from 'src/store/hooks';
 import {getSelectedDefinition} from 'src/store/definitionsSlice';
@@ -35,25 +30,10 @@ import {
   setConfigureKeyboardIsSelectable,
 } from 'src/store/keymapSlice';
 import {useDispatch} from 'react-redux';
-import {reloadConnectedDevices} from 'src/store/devicesThunks';
 import {getV3MenuComponents} from 'src/store/menusSlice';
 import {getIsMacroFeatureSupported} from 'src/store/macrosSlice';
-import {getConnectedDevices, getSupportedIds, setForceAuthorize} from 'src/store/devicesSlice';
-import {isElectron} from 'src/utils/running-context';
 import {useAppDispatch} from 'src/store/hooks';
 import {MenuTooltip} from '../inputs/tooltip';
-import {getRenderMode, getSelectedTheme} from 'src/store/settingsSlice';
-
-const defaultGlowColors = [
-  '#7b4dff', // 0: buttonShineLeft (Purple)
-  '#00e5ff', // 1: buttonShineRight (Cyan)
-  '#7b4dff', // 2: buttonGlowStart (Purple)
-  '#00e5ff', // 3: buttonGlowEnd (Cyan)
-  '#00c6ff', // 4: Border gradient / Glow Container bottom glow (Bright Blue)
-  '#1a1d2e', // 5: Glow Container background (Dark Blue/Purple)
-  '#2c2f48', // 6: buttonBackground (Slightly Lighter Dark Blue/Purple)
-  '#0f101c', // 7: buttonShadow (Very Dark Blue/Purple)
-];
 
 const MenuContainer = styled.div`
   padding: 15px 10px 20px 10px;
@@ -154,82 +134,16 @@ const getRowsForKeyboardV2 = (
   );
 };
 
-const Loader: React.FC<{
-  loadProgress: number;
-  selectedDefinition: VIADefinitionV2 | VIADefinitionV3 | null;
-}> = (props) => {
-  const {loadProgress, selectedDefinition} = props;
-  const dispatch = useAppDispatch();
-  const theme = useAppSelector(getSelectedTheme);
-
-  const connectedDevices = useAppSelector(getConnectedDevices);
-  const supportedIds = useAppSelector(getSupportedIds);
-  const noSupportedIds = !Object.values(supportedIds).length;
-  const noConnectedDevices = !Object.values(connectedDevices).length;
-  const [showButton, setShowButton] = useState<boolean>(false);
-
-  useEffect(() => {
-    // TODO: Remove the timeout because it is funky
-    const timeout = setTimeout(() => {
-      if (!selectedDefinition) {
-        setShowButton(true);
-      }
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [selectedDefinition]);
-  return (
-    <LoaderPane>
-      {(showButton || noConnectedDevices) && !noSupportedIds && !isElectron ? (
-        <>
-          <GlowCircularLoader size='120px' thickness='2px' sx={{ marginBottom: '20px' }} />
-          <GlowButton
-            onClick={() => {
-              dispatch(setForceAuthorize(true));
-              dispatch(reloadConnectedDevices());
-            }}
-            colors={defaultGlowColors}
-            sx={{ fontSize: '1rem', minWidth: '180px' }}
-          >
-            Connect Keyboard
-            <FontAwesomeIcon style={{ marginLeft: '10px' }} icon={faPlus} />
-          </GlowButton>
-          <div style={{ height: "60px" }}/>
-        </>
-       ) : (
-         <LoadingText isSearching={!selectedDefinition} />
-       )}
-
-    </LoaderPane>
-  );
-};
-
-const LoaderPane = styled(CenterPane)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  row-gap: 50px;
-  position: absolute;
-  bottom: 50px;
-  top: 100px;
-  left: 0;
-  right: 0;
-  z-index: 4;
-`;
-
 export const ConfigurePane = () => {
   const selectedDefinition = useAppSelector(getSelectedDefinition);
   const loadProgress = useAppSelector(getLoadProgress);
-  const renderMode = useAppSelector(getRenderMode);
 
   const showLoader = !selectedDefinition || loadProgress !== 1;
-  return showLoader ? (
-    renderMode === '2D' ? (
-      <Loader
-        selectedDefinition={selectedDefinition || null}
-        loadProgress={loadProgress}
-      />
-    ) : null
-  ) : (
+  if (showLoader) {
+    return null; // The global loader overlay will be visible
+  }
+
+  return (
     <ConfigureBasePane>
       <ConfigureGrid />
     </ConfigureBasePane>
