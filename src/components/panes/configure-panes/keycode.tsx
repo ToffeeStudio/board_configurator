@@ -1,6 +1,5 @@
 import {FC, useState, useEffect, useMemo} from 'react';
 import styled from 'styled-components';
-import {Button} from '../../inputs/button';
 import {KeycodeModal} from '../../inputs/custom-keycode-modal';
 import {title, component} from '../../icons/keyboard';
 import * as EncoderPane from './encoder';
@@ -21,7 +20,7 @@ import {
   isVIADefinitionV2,
   VIADefinitionV3,
 } from '@the-via/reader';
-import {OverflowCell, SubmenuOverflowCell, SubmenuRow, SpanOverflowCell} from '../grid';
+import {SpanOverflowCell} from '../grid';
 import {useAppDispatch, useAppSelector} from 'src/store/hooks';
 import {
   getBasicKeyToByte,
@@ -44,10 +43,14 @@ import {
   getDisableFastRemap,
 } from 'src/store/settingsSlice';
 import {getNextKey} from 'src/utils/keyboard-rendering';
+import { GlowingMenu } from 'src/components/toffee_studio/GlowingMenu/GlowingMenu';
+import GlowButton from 'src/components/toffee_studio/GlowButton/GlowButton';
+
+// Controls grid cell size
 const KeycodeList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, 64px);
-  grid-auto-rows: 64px;
+  grid-template-columns: repeat(auto-fill, 54px);
+  grid-auto-rows: 54px;
   justify-content: center;
   grid-gap: 10px;
 `;
@@ -60,74 +63,67 @@ const KeycodePaneContainer = styled.div`
 
 const MenuContainer = styled.div`
   display: flex;
-  background-color: pink;
   flex-direction: row;
-  gap: 10px;
-  padding: 15px 10px;
-  flex-wrap: wrap;
   justify-content: center;
-  border-bottom: 1px solid var(--border_color_cell);
+  padding: 5px 10px 0 10px;
+  background-color: transparent;
 `;
 
-const Keycode = styled(Button)<{disabled: boolean}>`
-  width: 50px;
-  height: 50px;
-  line-height: 18px;
-  border-radius: 64px;
-  font-size: 14px;
-  border: 4px solid var(--border_color_icon);
-  background: var(--bg_control);
-  color: var(--color_label-highlighted);
-  margin: 0;
-  box-shadow: none;
-  position: relative;
-  border-radius: 10px;
-  &:hover {
-    border-color: var(--color_accent);
-    transform: translate3d(0, -2px, 0);
-  }
-  ${(props: any) => props.disabled && `cursor:not-allowed;filter:opacity(50%);`}
-`;
-
-const KeycodeContent = styled.div`
-  text-overflow: ellipsis;
-  overflow: hidden;
-`;
-
-const CustomKeycode = styled(Button)`
-  width: 50px;
-  height: 50px;
-  line-height: 18px;
-  border-radius: 10px;
-  font-size: 14px;
-  border: 4px solid var(--border_color_icon);
-  background: var(--color_accent);
-  border-color: var(--color_inside_accent);
-  color: var(--color_inside_accent);
-  margin: 0;
+// Wrapper to handle hover tooltips and event bubbling for the GlowButton
+const KeycodeWrapper = styled.div<{disabled?: boolean}>`
+  width: 100%;
+  height: 100%;
+  ${(props) => props.disabled && `
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  `}
 `;
 
 const KeycodeContainer = styled.div`
-  padding: 12px;
-  padding-bottom: 30px;
+  padding: 6px 84px;
+  /* 
+     Large padding allows keys to scroll UP past the fade mask 
+     so the last row is fully visible before the "dead zone" 
+  */
+  padding-bottom: 80px;
+  box-sizing: border-box;
 `;
 
 const KeycodeDesc = styled.div`
   position: fixed;
-  bottom: 0;
-  background: #d9d9d97a;
+  bottom: 64px;
+  left: calc(300px + 43%);
+  transform: translateX(-50%);
+  background: #d9d9d9;
   box-sizing: border-box;
   transition: opacity 0.4s ease-out;
   height: 25px;
-  width: 100%;
+  width: auto;
+  min-width: 150px;
+  text-align: center;
+  border-radius: 4px;
   line-height: 14px;
-  padding: 5px;
+  padding: 5px 10px;
   font-size: 14px;
+  color: #333;
   opacity: 1;
   pointer-events: none;
+  z-index: 50;
   &:empty {
     opacity: 0;
   }
+`;
+
+const StyledSpanOverflowCell = styled(SpanOverflowCell)`
+  /* 
+     Gradient logic:
+     1. Black (Visible) until 60px from bottom.
+     2. Fades to Transparent (Invisible) at 20px from bottom.
+     3. Stays Transparent for the last 20px (The "Dead Zone" / Spacing).
+  */
+  mask-image: linear-gradient(to bottom, black calc(100% - 80px), transparent calc(100% - 36px));
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 80px), transparent calc(100% - 36px));
 `;
 
 const generateKeycodeCategories = (basicKeyToByte: Record<string, number>, numMacros: number = 16) =>
@@ -226,17 +222,20 @@ export const KeycodePane: FC = () => {
   };
 
   const renderCategories = () => {
+    const enabledMenus = getEnabledMenus();
+    const menuItems = enabledMenus.map((m) => m.label);
+    const activeIndex = enabledMenus.findIndex((m) => m.id === selectedCategory);
+
     return (
       <MenuContainer>
-        {getEnabledMenus().map(({id, label}) => (
-          <SubmenuRow
-            $selected={id === selectedCategory}
-            onClick={() => setSelectedCategory(id)}
-            key={id}
-          >
-            {label}
-          </SubmenuRow>
-        ))}
+        <GlowingMenu 
+          items={menuItems}
+          selectedIndex={activeIndex !== -1 ? activeIndex : 0}
+          onChange={(idx) => setSelectedCategory(enabledMenus[idx].id)}
+          fontSize="15px"
+          hideBaseLine={true} // No static line
+          hideIndicator={true} // No moving line
+        />
       </MenuContainer>
     );
   };
@@ -288,29 +287,53 @@ export const KeycodePane: FC = () => {
 
   const renderKeycode = (keycode: IKeycode, index: number) => {
     const {code, title, name} = keycode;
+    const isDisabled = !keycodeInMaster(code, basicKeyToByte) && code != 'text';
+    
     return (
-      <Keycode
+      <KeycodeWrapper
         key={code}
-        disabled={!keycodeInMaster(code, basicKeyToByte) && code != 'text'}
-        onClick={() => handleClick(code, index)}
+        disabled={isDisabled}
         onMouseOver={() => setMouseOverDesc(title ? `${code}: ${title}` : code)}
         onMouseOut={() => setMouseOverDesc(null)}
       >
-        <KeycodeContent>{name}</KeycodeContent>
-      </Keycode>
+        <GlowButton
+          square
+          basic
+          onClick={() => handleClick(code, index)}
+          sx={{ 
+            fontSize: '13px',
+            fontWeight: 600,
+            lineHeight: '1.2',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2px',
+            overflow: 'hidden',
+            wordBreak: 'break-word'
+          }}
+        >
+          {name}
+        </GlowButton>
+      </KeycodeWrapper>
     );
   };
 
   const renderCustomKeycode = () => {
     return (
-      <CustomKeycode
+      <KeycodeWrapper
         key="customKeycode"
-        onClick={() => selectedKey !== null && handleClick('text', 0)}
         onMouseOver={() => setMouseOverDesc('Enter any QMK Keycode')}
         onMouseOut={() => setMouseOverDesc(null)}
       >
-        Any
-      </CustomKeycode>
+        <GlowButton
+          square
+          basic
+          onClick={() => selectedKey !== null && handleClick('text', 0)}
+          sx={{ fontSize: '14px', fontWeight: 'bold' }}
+        >
+          Any
+        </GlowButton>
+      </KeycodeWrapper>
     );
   };
 
@@ -369,16 +392,18 @@ export const KeycodePane: FC = () => {
   )?.keycodes as IKeycode[];
 
   return (
-    <SpanOverflowCell>
-      <KeycodePaneContainer>
-        {renderCategories()}
-        <KeycodeContainer>
-          {renderSelectedCategory(selectedCategoryKeycodes, selectedCategory)}
-        </KeycodeContainer>
-        <KeycodeDesc>{mouseOverDesc}</KeycodeDesc>
-      </KeycodePaneContainer>
+    <>
+      <StyledSpanOverflowCell>
+        <KeycodePaneContainer>
+          {renderCategories()}
+          <KeycodeContainer>
+            {renderSelectedCategory(selectedCategoryKeycodes, selectedCategory)}
+          </KeycodeContainer>
+        </KeycodePaneContainer>
+      </StyledSpanOverflowCell>
+      <KeycodeDesc>{mouseOverDesc}</KeycodeDesc>
       {showKeyTextInputModal && renderKeyInputModal()}
-    </SpanOverflowCell>
+    </>
   );
 };
 

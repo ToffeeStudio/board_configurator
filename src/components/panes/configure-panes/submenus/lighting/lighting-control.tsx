@@ -1,7 +1,7 @@
 import React from 'react';
-import {AccentSlider} from '../../../../inputs/accent-slider';
 import {AccentSelect} from '../../../../inputs/accent-select';
-import {AccentRange} from '../../../../inputs/accent-range';
+import GlowToggle from '../../../../toffee_studio/GlowToggle/GlowToggle';
+import GlowRange from '../../../../toffee_studio/GlowRange/GlowRange';
 import {ControlRow, Label, Detail} from '../../../grid';
 import type {
   VIADefinitionV2,
@@ -44,8 +44,8 @@ export const LightingControl = (props: AdvancedControlProps) => {
         <ControlRow>
           <Label>{labelContent}</Label>
           <Detail>
-            <AccentSlider
-              isChecked={!!valArr[0]}
+            <GlowToggle
+              value={!!valArr[0]}
               onChange={(val: boolean) =>
                 dispatch(updateBacklightValue(command, +val))
               }
@@ -59,10 +59,10 @@ export const LightingControl = (props: AdvancedControlProps) => {
         <ControlRow>
           <Label>{labelContent}</Label>
           <Detail>
-            <AccentRange
+            <GlowRange
               max={meta.max}
               min={meta.min}
-              defaultValue={valArr[0]}
+              value={valArr[0]}
               onChange={(val) => dispatch(updateBacklightValue(command, val))}
             />
           </Detail>
@@ -114,8 +114,8 @@ export const LightingControl = (props: AdvancedControlProps) => {
         <ControlRow>
           <Label>{labelContent}</Label>
           <Detail>
-            <AccentSlider
-              isChecked={valArr[0] !== 255}
+            <GlowToggle
+              value={valArr[0] !== 255}
               onChange={(val) => {
                 const args = val ? [254, 254] : [255, 255];
                 dispatch(updateBacklightValue(command, ...args));

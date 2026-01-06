@@ -54,25 +54,34 @@ const generateGlowButtons = () => {
 };
 
 
-export default ({onClick, children, forceOn, sx}: any) => {
+export default ({onClick, children, forceOn, sx, square, basic}: any) => {
 
   const theme = useAppSelector(getSelectedTheme);
 
   const [ hovered, setHovered ] = useState(false);
   useEffect(() => {
-    generateGlowButtons();
-    window.addEventListener('resize', generateGlowButtons);
+    if (!basic) {
+      generateGlowButtons();
+      window.addEventListener('resize', generateGlowButtons);
+      return () => {
+        window.removeEventListener('resize', generateGlowButtons);
+      };
+    }
+  }, [basic]);
 
-    return () => {
-      window.removeEventListener('resize', generateGlowButtons);
-    };
-  }, []);
+  // Border Logic:
+  // Basic Mode: Always solid border. Dim (4D) by default, Opaque (FF) on hover.
+  // Glow Mode: Transparent (00) when glowing (so gradient shows), Opaque (FF) when static.
+  const borderColor = theme.glow?.[4] || '#fff';
+  const borderStyle = basic 
+    ? `1px solid ${borderColor}${hovered ? 'FF' : '6D'}`
+    : (forceOn || hovered) ? `1px solid ${borderColor}00` : `1px solid ${borderColor}FF`;
 
   return (
     <GlowButton
       className="glow-button"
       style={{
-        border: (forceOn || hovered) ? `1px solid ${theme.glow![4]}00` : `1px solid ${theme.glow![4]}FF`,
+        border: borderStyle,
       }}
       onClick={onClick}
       onMouseEnter={()=>setHovered(true)}
@@ -83,17 +92,23 @@ export default ({onClick, children, forceOn, sx}: any) => {
       $buttonGlowEnd={theme.glow[3]}
       $buttonBackground={theme.glow[6]}
       $buttonShadow={theme.glow[7]}
+      $square={square}
+      $basic={basic}
     >
       <GlowButtonInner
         className="inner"
         $forceOn={forceOn}
         $buttonBrightenedBackground={brightenColor(theme.glow[6], 35)}
+        $square={square}
+        $basic={basic}
         style={sx}
       >
         {children}
       </GlowButtonInner>
       <GlowButtonGradient
         className="gradient"
+        $square={square}
+        $basic={basic}
         style={{
           opacity: (hovered || forceOn) ? 100 : 0
         }} 
@@ -101,4 +116,3 @@ export default ({onClick, children, forceOn, sx}: any) => {
     </GlowButton>
   );
 };
-

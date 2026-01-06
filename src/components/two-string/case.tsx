@@ -53,22 +53,22 @@ export const Case = React.memo((props: {width: number; height: number}) => {
   return (
     <CaseGroup>
       <OuterCase
-        background={outsideColor}
+        background={'transparent'}
         width={outsideWidth}
         height={outsideHeight}
         style={{
           borderRadius: 8,
-          boxShadow: 'var(--box-shadow-keyboard)',
+          boxShadow: 'none',
         }}
       ></OuterCase>
       <InnerCase
-        background={`linear-gradient(200deg,${stp1} 40%,${stp2},${stp3} 80%)`}
+        background={'transparent'}
         width={insideWidth}
         height={insideHeight}
         style={{
           transform: `translate( ${insideWidth - properWidth}px,
            ${insideHeight - properHeight}px)`,
-          boxShadow: 'var(--box-shadow-keyboard)',
+          boxShadow: 'none',
           borderRadius: 8,
         }}
       ></InnerCase>

@@ -64,7 +64,7 @@ export default [
     component: ToffeeLighting,
     icon: faLightbulb,
     path: '/toffee-lighting',
-    title: 'Toffee Lighting',
+    title: 'Lighting',
   },
   ErrorsPaneConfig,
 ];

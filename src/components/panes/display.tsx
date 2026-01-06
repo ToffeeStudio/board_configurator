@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
+import React, { useState, useEffect, useMemo } from 'react';
+import styled, { css, keyframes } from 'styled-components';
 import { useAppDispatch, useAppSelector } from 'src/store/hooks';
 import { getSelectedKeyboardAPI, getSelectedConnectedDevice } from 'src/store/devicesSlice';
 import { ToffeeFileSystemAPI, ToffeeLightingAPI, ToffeeHIDDevice } from 'src/utils/toffee_studio/hid';
@@ -7,6 +7,18 @@ import { processImageToRGB565, convertRawToPngDataUrl } from 'src/utils/toffee_s
 import { Buffer } from 'buffer';
 import { getCdcStatus } from 'src/store/cdcSlice';
 import { connectCdcPort, disconnectCdcPort, sendImageViaCdc, listAllFilesViaCdc } from 'src/store/cdcThunks';
+import { GlowingMenu } from '../toffee_studio/GlowingMenu/GlowingMenu';
+
+const fadeSlideIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
 
 const DisplayPaneContainer = styled.div`
   padding: 20px;
@@ -15,6 +27,7 @@ const DisplayPaneContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 15px;
+  animation: ${fadeSlideIn} 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 
   button {
     cursor: pointer;
@@ -34,12 +47,278 @@ const DisplayPaneContainer = styled.div`
   }
 `;
 
+/* =========================================
+   EXPERIMENTAL TOGGLE STYLES
+   ========================================= */
+
+// --- STYLE 1: NEON GRADIENT PILL ---
+const TogglePillWrapper = styled.label<{ $active: boolean }>`
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  cursor: pointer;
+  border-radius: 28px;
+  transition: all 0.3s ease;
+  
+  /* Off State */
+  background: #1a1d2e; 
+  border: 1px solid #3B2F63; 
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+
+  /* On State */
+  ${props => props.$active && css`
+    background: linear-gradient(90deg, #7b4dff, #00e5ff);
+    border-color: transparent;
+    box-shadow: 0 0 15px rgba(123, 77, 255, 0.4); // Outer glow
+  `}
+`;
+
+const TogglePillKnob = styled.span<{ $active: boolean }>`
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+
+  ${props => props.$active && css`
+    transform: translateX(22px);
+  `}
+`;
+
+// --- STYLE 2: CYBER PLATE ---
+const ToggleCyberWrapper = styled.label<{ $active: boolean }>`
+  position: relative;
+  display: inline-block;
+  width: 54px;
+  height: 26px;
+  cursor: pointer;
+  background: #0f101c;
+  border: 1px solid #3B2F63;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  ${props => props.$active && css`
+    border-color: #00e5ff;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.15);
+    
+    /* Inner glow wash */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(123, 77, 255, 0.2), rgba(0, 229, 255, 0.2));
+    }
+  `}
+`;
+
+const ToggleCyberKnob = styled.span<{ $active: boolean }>`
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 20px;
+  background: #2c2f48;
+  border-radius: 2px;
+  border: 1px solid #555;
+  z-index: 2;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s, border-color 0.3s;
+  
+  /* Little grip lines */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  
+  &::before, &::after {
+    content: '';
+    width: 1px;
+    height: 8px;
+    background: #555;
+    transition: background 0.3s;
+  }
+
+  ${props => props.$active && css`
+    transform: translateX(24px);
+    background: #fff;
+    border-color: #fff;
+    
+    &::before, &::after {
+      background: #7b4dff;
+    }
+  `}
+`;
+
+// --- STYLE 3: ECLIPSE HALO (UPDATED) ---
+const ToggleEclipseWrapper = styled.label`
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  cursor: pointer;
+  /* The track is just a thin line */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #3B2F63;
+    border-radius: 4px;
+    transform: translateY(-50%);
+  }
+`;
+
+const ToggleEclipseKnob = styled.span<{ $active: boolean }>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #1a1d2e;
+  border: 1.5px solid #3B2F63; 
+  box-sizing: border-box;
+  
+  transition: all 0.2s ease-out; 
+  box-shadow: 0 0 0 rgba(0,0,0,0);
+
+  ${props => props.$active && css`
+    transform: translateX(24px);
+    background: #1a1d2e; 
+    border-color: color-mix(in srgb, #ffffff 30%, #7b4dff);
+    box-shadow: 0 0 10px #7b4dff; 
+  `}
+`;
+
+/* =========================================
+   EXPERIMENTAL SLIDER STYLES
+   ========================================= */
+
+// Base styled input for range
+const BaseRange = styled.input.attrs({ type: 'range' })`
+  -webkit-appearance: none;
+  width: 200px;
+  background: transparent;
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+  }
+`;
+
+// --- STYLE 1: NEON PULSE SLIDER ---
+const NeonRange = styled(BaseRange)<{ $percent: number }>`
+  /* Track */
+  &::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    /* Dynamic background gradient based on value */
+    background: linear-gradient(to right, #7b4dff 0%, #00e5ff ${props => props.$percent}%, #1a1d2e ${props => props.$percent}%, #1a1d2e 100%);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+  }
+
+  /* Thumb */
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 18px;
+    width: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    margin-top: -6px; /* Center on track */
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
+    transition: transform 0.1s ease;
+  }
+
+  &:active::-webkit-slider-thumb {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(123, 77, 255, 1);
+  }
+`;
+
+// --- STYLE 2: CYBER STRIP SLIDER ---
+const CyberRange = styled(BaseRange)<{ $percent: number }>`
+  /* Track */
+  &::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 12px;
+    border: 1px solid #3B2F63;
+    background: 
+      repeating-linear-gradient(
+        90deg,
+        #1a1d2e,
+        #1a1d2e 2px,
+        transparent 2px,
+        transparent 4px
+      ),
+      linear-gradient(to right, rgba(0, 229, 255, 0.2) 0%, rgba(0, 229, 255, 0.2) ${props => props.$percent}%, transparent ${props => props.$percent}%);
+  }
+
+  /* Thumb */
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 8px;
+    background: #0f101c;
+    border: 1px solid #00e5ff;
+    margin-top: -3px;
+    box-shadow: 0 0 5px #00e5ff;
+  }
+`;
+
+// --- STYLE 3: ECLIPSE HALO SLIDER (Matches Toggle) ---
+const EclipseRange = styled(BaseRange)<{ $percent: number }>`
+  /* Track: Thin line, minimal logic */
+  &::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    background: #3B2F63; /* The structural color */
+    border-radius: 4px;
+  }
+
+  /* Thumb: Dark circle with structural border + halo */
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 24px;
+    width: 24px;
+    border-radius: 50%;
+    background: #1a1d2e;
+    border: 1.5px solid #3B2F63;
+    margin-top: -10px; /* (24 - 4) / 2 */
+    transition: all 0.2s ease-out;
+    box-shadow: 0 0 0 rgba(0,0,0,0); /* No glow by default */
+  }
+
+  /* On Hover/Active: Show the purple halo and light up border */
+  &:hover::-webkit-slider-thumb, &:active::-webkit-slider-thumb {
+    border-color: color-mix(in srgb, #ffffff 30%, #7b4dff);
+    box-shadow: 0 0 10px #7b4dff;
+  }
+`;
+
+
 export const DisplayPane: React.FC = () => {
   const dispatch = useAppDispatch();
   const keyboardAPI = useAppSelector(getSelectedKeyboardAPI);
   const selectedDevice = useAppSelector(getSelectedConnectedDevice);
   const cdcStatus = useAppSelector(getCdcStatus);
 
+  // Experimental Toggle States
+  const [toggle1, setToggle1] = useState(false);
+  const [toggle2, setToggle2] = useState(false);
+  const [toggle3, setToggle3] = useState(false);
+
+  // Experimental Slider States
+  const [slider1, setSlider1] = useState(50);
+  const [slider2, setSlider2] = useState(75);
+  const [slider3, setSlider3] = useState(25);
 
   const [lightingState, setLightingState] = useState<{
     effect: number;
@@ -258,6 +537,86 @@ export const DisplayPane: React.FC = () => {
   return (
     <DisplayPaneContainer>
       <h1>Display Experimentation Page</h1>
+      
+      <GlowingMenu 
+        items={['General', 'Implementation', 'Security & Compliance', 'Use Cases']} 
+        onChange={(idx) => console.log(`Menu index ${idx} clicked`)}
+      />
+
+      {/* --- EXPERIMENTAL TOGGLES SECTION --- */}
+      <div style={{ border: '1px solid #3B2F63', padding: '20px', borderRadius: '8px', background: '#0f101c' }}>
+        <h2 style={{marginTop: 0, marginBottom: '20px', color: '#fff'}}>Experimental Toggle Styles</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '40px', flexWrap: 'wrap' }}>
+          
+          {/* Style 1 */}
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px'}}>
+            <span style={{color: '#aaa', fontSize: '14px'}}>Neon Gradient Pill</span>
+            <TogglePillWrapper $active={toggle1} onClick={() => setToggle1(!toggle1)}>
+              <TogglePillKnob $active={toggle1} />
+            </TogglePillWrapper>
+          </div>
+
+          {/* Style 2 */}
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px'}}>
+            <span style={{color: '#aaa', fontSize: '14px'}}>Cyber Plate</span>
+            <ToggleCyberWrapper $active={toggle2} onClick={() => setToggle2(!toggle2)}>
+              <ToggleCyberKnob $active={toggle2} />
+            </ToggleCyberWrapper>
+          </div>
+
+          {/* Style 3 */}
+          <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px'}}>
+            <span style={{color: '#aaa', fontSize: '14px'}}>Eclipse Halo</span>
+            <ToggleEclipseWrapper onClick={() => setToggle3(!toggle3)}>
+              <ToggleEclipseKnob $active={toggle3} />
+            </ToggleEclipseWrapper>
+          </div>
+
+        </div>
+      </div>
+
+      {/* --- EXPERIMENTAL SLIDERS SECTION --- */}
+      <div style={{ border: '1px solid #3B2F63', padding: '20px', borderRadius: '8px', background: '#0f101c', marginTop: '20px' }}>
+        <h2 style={{marginTop: 0, marginBottom: '20px', color: '#fff'}}>Experimental Slider Styles</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+          
+          {/* Style 1 */}
+          <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+            <span style={{color: '#aaa', fontSize: '14px', width: '120px'}}>Neon Pulse</span>
+            <NeonRange 
+              value={slider1} 
+              onChange={(e) => setSlider1(parseInt(e.target.value))} 
+              $percent={slider1}
+            />
+            <span style={{color: '#fff', width: '30px'}}>{slider1}</span>
+          </div>
+
+          {/* Style 2 */}
+          <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+            <span style={{color: '#aaa', fontSize: '14px', width: '120px'}}>Cyber Strip</span>
+            <CyberRange 
+              value={slider2} 
+              onChange={(e) => setSlider2(parseInt(e.target.value))} 
+              $percent={slider2}
+            />
+            <span style={{color: '#fff', width: '30px'}}>{slider2}</span>
+          </div>
+
+          {/* Style 3 */}
+          <div style={{display: 'flex', alignItems: 'center', gap: '20px'}}>
+            <span style={{color: '#aaa', fontSize: '14px', width: '120px'}}>Eclipse Halo</span>
+            <EclipseRange 
+              value={slider3} 
+              onChange={(e) => setSlider3(parseInt(e.target.value))} 
+              $percent={slider3}
+            />
+            <span style={{color: '#fff', width: '30px'}}>{slider3}</span>
+          </div>
+
+        </div>
+      </div>
+      {/* ----------------------------------- */}
+
       <div style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
         <h2>Lighting Control (Test Buttons)</h2>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>

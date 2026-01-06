@@ -85,50 +85,6 @@
           ]
         }
       ]
-    },
-    {
-      "label": "Underglow Lighting",
-      "content": [
-        {
-          "label": "Underglow Control",
-          "content": [
-            {
-              "label": "Effect",
-              "type": "dropdown",
-              "content": ["toffee_effect", 99, 113],
-              "options": [
-                "Solid",
-                "Breathing",
-                "Cycle L-R",
-                "Cycle U-D",
-                "Band Sat L-R",
-                "Band Sat U-D",
-                "Hue Breathing",
-                "Rainbow Vortex",
-                "Vortex",
-                "Comet Tail"
-              ]
-            },
-            {
-              "label": "Brightness",
-              "type": "range",
-              "options": [0, 255],
-              "content": ["toffee_brightness", 99, 116]
-            },
-            {
-              "label": "Speed",
-              "type": "range",
-              "options": [0, 255],
-              "content": ["toffee_speed", 99, 114]
-            },
-            {
-              "label": "Color",
-              "type": "color",
-              "content": ["toffee_color", 99, 117]
-            }
-          ]
-        }
-      ]
     }
   ]
 }

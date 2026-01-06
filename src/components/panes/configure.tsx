@@ -1,7 +1,7 @@
-import React, {useState, useEffect} from 'react';
-import styled from 'styled-components';
+import React, {useState, useEffect, useMemo} from 'react';
+import styled, {keyframes} from 'styled-components';
 import ChippyLoader from '../chippy-loader';
-import {CenterPane, ConfigureBasePane} from './pane';
+import {ConfigureBasePane} from './pane';
 import {
   CustomFeaturesV2,
   getLightingDefinition,
@@ -10,12 +10,12 @@ import {
   VIADefinitionV2,
   VIADefinitionV3,
 } from '@the-via/reader';
-import {Grid, Row, IconContainer, MenuCell, ConfigureFlexCell} from './grid';
+import {Grid, IconContainer, MenuCell, ConfigureFlexCell, SubmenuRow} from './grid';
 import * as Keycode from './configure-panes/keycode';
-import * as Lighting from './configure-panes/lighting';
 import * as Macros from './configure-panes/macros';
-import * as SaveLoad from './configure-panes/save-load';
 import * as Layouts from './configure-panes/layouts';
+import * as Lighting from './configure-panes/lighting';
+import * as SaveLoad from './configure-panes/save-load';
 import * as RotaryEncoder from './configure-panes/custom/satisfaction75';
 import {makeCustomMenus} from './configure-panes/custom/menu-generator';
 import {LayerControl} from './configure-panes/layer-control';
@@ -33,11 +33,44 @@ import {useDispatch} from 'react-redux';
 import {getV3MenuComponents} from 'src/store/menusSlice';
 import {getIsMacroFeatureSupported} from 'src/store/macrosSlice';
 import {useAppDispatch} from 'src/store/hooks';
-import {MenuTooltip} from '../inputs/tooltip';
+import { GlowingMenu } from '../toffee_studio/GlowingMenu/GlowingMenu';
 
-const MenuContainer = styled.div`
-  padding: 15px 10px 20px 10px;
+// --- STYLED COMPONENTS MOVED OUTSIDE ---
+
+const HorizontalMenuContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+  background: transparent;
+  pointer-events: all;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 `;
+
+const fadeSlideIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+// We extend Grid here to preserve the "display: grid" context for children
+// like SubmenuCell and OverflowCell, while applying the animation to the container.
+const PaneAnimationGrid = styled(Grid)`
+  grid-template-columns: min-content minmax(0, 1fr);
+  height: 100%;
+  width: 100%;
+  animation: ${fadeSlideIn} 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+`;
+
+// ---------------------------------------
 
 const Rows = [
   Keycode,
@@ -151,7 +184,7 @@ export const ConfigurePane = () => {
 };
 
 const ConfigureGrid = () => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
   const [selectedRow, setRow] = useState(0);
   const KeyboardRows = getRowsForKeyboard();
@@ -164,7 +197,12 @@ const ConfigureGrid = () => {
     } else {
       dispatch(setConfigureKeyboardIsSelectable(true));
     }
-  }, [selectedTitle]);
+  }, [selectedTitle, dispatch]);
+
+  // Memoize menu items to prevent array reference changes on re-renders
+  const menuItems = useMemo(() => 
+    (KeyboardRows || []).map((row) => (row.Title as string) || 'Unknown'),
+  [KeyboardRows]);
 
   return (
     <>
@@ -186,28 +224,24 @@ const ConfigureGrid = () => {
           <Badge />
         </div>
       </ConfigureFlexCell>
-      <Grid style={{pointerEvents: 'none'}}>
-        <MenuCell style={{pointerEvents: 'all'}}>
-          <MenuContainer>
-            {(KeyboardRows || []).map(
-              ({Icon, Title}: {Icon: any; Title: string}, idx: number) => (
-                <Row
-                  key={idx}
-                  onClick={(_) => setRow(idx)}
-                  $selected={selectedRow === idx}
-                >
-                  <IconContainer>
-                    <Icon />
-                    <MenuTooltip>{Title}</MenuTooltip>
-                  </IconContainer>
-                </Row>
-              ),
-            )}
-          </MenuContainer>
-        </MenuCell>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', pointerEvents: 'none' }}>
+        <HorizontalMenuContainer>
+          <GlowingMenu 
+            items={menuItems} 
+            selectedIndex={selectedRow}
+            onChange={(idx) => setRow(idx)} 
+          />
+        </HorizontalMenuContainer>
 
-        {SelectedPane && <SelectedPane />}
-      </Grid>
+        <div style={{ flex: 1, overflow: 'auto', pointerEvents: 'all', position: 'relative' }}>
+          {SelectedPane && (
+            <PaneAnimationGrid key={selectedRow}>
+              <SelectedPane />
+            </PaneAnimationGrid>
+          )}
+        </div>
+      </div>
     </>
   );
 };

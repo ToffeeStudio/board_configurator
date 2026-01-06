@@ -1,9 +1,8 @@
-/* This is a workaround to ← → missing in Google Fonts web font.
-Explicitly import the missing arrows.
+/* This is a workaround to ← → missing in some Google Fonts web fonts.
+Explicitly import the missing arrows if needed.
 See https://stackoverflow.com/questions/40822458/styled-unicode-arrows-not-showing-up-with-google-fonts-web-font
  */
-@import url('https://fonts.googleapis.com/css?family=Fira+Sans');
-@import url('https://fonts.googleapis.com/css?family=Fira+Sans&text=%E2%86%90|%E2%86%92');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
 html,
 body {
@@ -17,16 +16,16 @@ body {
   position: relative;
   color: white;
   background-color: black;
-  font-family: 'Fira Sans', Helvetica, Helvetica Neue, Arial, serif;
-  font-weight: 300;
+  font-family: 'Montserrat', Helvetica, 'Helvetica Neue', Arial, serif;
+  font-weight: 500;
   overflow: hidden;
   margin: 0;
   padding: 0;
   user-select: none;
 }
 button {
-  font-family: 'Fira Sans', Helvetica, Helvetica Neue, Arial, serif;
-  font-weight: 300;
+  font-family: 'Montserrat', Helvetica, 'Helvetica Neue', Arial, serif;
+  font-weight: 500;
 }
 h2 {
   margin: 0;
@@ -167,3 +166,4 @@ html[data-theme-mode='light'] {
     filter: brightness(1.25);
   }
 }
+

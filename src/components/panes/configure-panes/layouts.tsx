@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import {title, component} from '../../icons/layouts';
 import {ControlRow, SpanOverflowCell, Label, Detail} from '../grid';
-import {AccentSlider} from '../../inputs/accent-slider';
+import GlowToggle from '../../toffee_studio/GlowToggle/GlowToggle';
 import {AccentSelect} from '../../inputs/accent-select';
 import {CenterPane} from '../pane';
 import {
@@ -48,8 +48,8 @@ const LayoutControl: React.FC<{
       <ControlRow>
         <Label>{labels}</Label>
         <Detail>
-          <AccentSlider
-            isChecked={!!selectedOption}
+          <GlowToggle
+            value={!!selectedOption}
             onChange={(val) => onChange(+val)}
           />
         </Detail>

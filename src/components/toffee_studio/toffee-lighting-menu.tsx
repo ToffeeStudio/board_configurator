@@ -3,7 +3,7 @@ import { useAppSelector } from 'src/store/hooks';
 import { getSelectedKeyboardAPI } from 'src/store/devicesSlice';
 import { ToffeeLightingAPI, ToffeeHIDDevice } from 'src/utils/toffee_studio/hid';
 import { AccentSelect } from 'src/components/inputs/accent-select';
-import { AccentRange } from 'src/components/inputs/accent-range';
+import GlowRange from './GlowRange/GlowRange';
 import { ArrayColorPicker } from 'src/components/inputs/color-picker';
 import { ControlRow, Label, Detail } from 'src/components/panes/grid';
 
@@ -130,7 +130,7 @@ export const ToffeeLightingMenu: React.FC = () => {
       <ControlRow>
         <Label>Brightness</Label>
         <Detail>
-          <AccentRange
+          <GlowRange
             min={0}
             max={255}
             value={lightingState.brightness}
@@ -142,7 +142,7 @@ export const ToffeeLightingMenu: React.FC = () => {
       <ControlRow>
         <Label>Speed</Label>
         <Detail>
-          <AccentRange
+          <GlowRange
             min={0}
             max={255}
             value={lightingState.speed}

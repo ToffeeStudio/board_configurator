@@ -1,25 +1,5 @@
 import styled from 'styled-components';
 
-const brightenColor = (hex: string, percent: number) => {
-  // Convert hex to RGB
-  let r = parseInt(hex.substring(1, 3), 16);
-  let g = parseInt(hex.substring(3, 5), 16);
-  let b = parseInt(hex.substring(5, 7), 16);
-
-  // Increase brightness by the given percentage
-  r = Math.min(255, Math.floor(r * (1 + percent / 100)));
-  g = Math.min(255, Math.floor(g * (1 + percent / 100)));
-  b = Math.min(255, Math.floor(b * (1 + percent / 100)));
-
-  // Convert RGB back to hex
-  const newHex = `#${((1 << 24) + (r << 16) + (g << 8) + b)
-    .toString(16)
-    .slice(1)
-    .toUpperCase()}`;
-
-  return newHex;
-}
-
 interface GlowButtonProps {
   $buttonBackground: string;
   $buttonShadow: string;
@@ -27,6 +7,8 @@ interface GlowButtonProps {
   $buttonShineRight: string;
   $buttonGlowStart: string;
   $buttonGlowEnd: string;
+  $square?: boolean;
+  $basic?: boolean;
 }
 
 export const GlowButton = styled.div<GlowButtonProps>`
@@ -38,7 +20,7 @@ export const GlowButton = styled.div<GlowButtonProps>`
   --button-glow-start: ${props => props.$buttonGlowStart};
   --button-glow-end: ${props => props.$buttonGlowEnd};
   --button-padding: 1px;
-  --button-radius: 12px;
+  --button-radius: ${props => props.$square ? '8px' : '12px'};
 
   transition: all 200ms ease-out;
   overflow: hidden;
@@ -57,33 +39,58 @@ export const GlowButton = styled.div<GlowButtonProps>`
   margin: 0;
   background: none;
   z-index: 1;
-  box-shadow: 0 8px 20px var(--button-shadow);
+  box-shadow: ${props => props.$basic ? 'none' : '0 8px 20px var(--button-shadow)'};
+  
+  /* Fix layout issues */
+  box-sizing: border-box;
+  
+  /* Square specific styles */
+  width: ${props => props.$square ? '100%' : 'auto'};
+  height: ${props => props.$square ? '100%' : 'auto'};
+  aspect-ratio: ${props => props.$square ? '1' : 'auto'};
 
   &:hover {
-  --button-glow-opacity: 1;
-  --button-glow-duration: 0.25s;
+    --button-glow-opacity: ${props => props.$basic ? '0' : '1'};
+    --button-glow-duration: 0.25s;
   }
 `
 
 interface GlowButtonInnerProps {
   $forceOn?: boolean;
   $buttonBrightenedBackground: string;
+  $square?: boolean;
+  $basic?: boolean;
 }
 
 export const GlowButtonInner = styled.div<GlowButtonInnerProps>`
   transition: all 200ms ease-out;
   z-index: 1;
   position: relative;
-  padding: 10px 28px;
+  padding: ${props => props.$square ? '0' : '10px 28px'};
   box-sizing: border-box;
   width: 100%;
+  height: 100%; 
   border-radius: calc(var(--button-radius) - var(--button-padding));
-  background-color: ${props=>props.$forceOn ? props.$buttonBrightenedBackground : "var(--button-background)"};
+  
+  /* Background logic: Basic gets darker mix, otherwise standard or brightened on force */
+  background-color: ${props => 
+    props.$basic 
+      ? 'color-mix(in srgb, var(--button-background), black 10%)' 
+      : (props.$forceOn ? props.$buttonBrightenedBackground : "var(--button-background)")
+  };
+  
   overflow: hidden;
   -webkit-mask-image: -webkit-radial-gradient(white, black);
 
+  /* Flex centering for square buttons */
+  display: ${props => props.$square ? 'flex' : 'block'};
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+
   &::before {
     content: '';
+    display: ${props => props.$basic ? 'none' : 'block'};
     position: absolute;
     left: -16px;
     top: -16px;
@@ -98,15 +105,24 @@ export const GlowButtonInner = styled.div<GlowButtonInnerProps>`
   }
 `
 
-export const GlowButtonGradient = styled.div`
+interface GlowButtonGradientProps {
+  $square?: boolean;
+  $basic?: boolean;
+}
+
+export const GlowButtonGradient = styled.div<GlowButtonGradientProps>`
   opacity: 0;
+  display: ${props => props.$basic ? 'none' : 'block'};
   transition: all 200ms ease-out;
   position: absolute;
   inset: 0;
   border-radius: inherit;
   overflow: hidden;
   -webkit-mask-image: -webkit-radial-gradient(white, black);
-  transform: scaleY(1.02) scaleX(1.05) rotate(-0.35deg);
+  
+  /* Only skew/rotate for rectangular buttons */
+  transform: ${props => props.$square ? 'none' : 'scaleY(1.02) scaleX(1.05) rotate(-0.35deg)'};
+
   &::before {
     content: '';
     position: absolute;

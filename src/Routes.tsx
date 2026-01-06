@@ -109,7 +109,7 @@ const Loader: React.FC = () => {
               dispatch(reloadConnectedDevices());
             }}
             colors={defaultGlowColors}
-            sx={{ fontSize: '1rem', minWidth: '180px' }}
+            sx={{ fontSize: '1rem', minWidth: '180px', fontWeight: 500 }}
           >
             Connect Keyboard
             <FontAwesomeIcon style={{ marginLeft: '10px' }} icon={faPlus} />
