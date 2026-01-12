@@ -304,7 +304,7 @@ const EclipseRange = styled(BaseRange)<{ $percent: number }>`
 `;
 
 
-export const DisplayPane: React.FC = () => {
+export const ToffeeTestPane: React.FC = () => {
   const dispatch = useAppDispatch();
   const keyboardAPI = useAppSelector(getSelectedKeyboardAPI);
   const selectedDevice = useAppSelector(getSelectedConnectedDevice);
@@ -763,3 +763,4 @@ export const DisplayPane: React.FC = () => {
     </DisplayPaneContainer>
   );
 };
+

@@ -66,6 +66,58 @@ export class ToffeeCDC {
   }
 
   /**
+   * Drains the serial buffer of any stale data.
+   * Crucial to call before initiating a new file transfer sequence to prevent
+   * leftover bytes from being misinterpreted as headers/sizes.
+   */
+  public async clearBuffer(): Promise<void> {
+    if (!this.isConnected() || !this.port?.readable) return;
+
+    // We need to acquire a lock to read
+    const reader = this.port.readable.getReader();
+    try {
+      console.log('[CDC] Clearing buffer...');
+      let consecutiveTimeouts = 0;
+      
+      // Read repeatedly until we get "silence" (timeouts)
+      while (true) {
+        // Race the read against a short timeout (150ms)
+        const { value, done } = await Promise.race([
+          reader.read().then(res => ({ ...res, timeout: false })),
+          new Promise<{ value: undefined, done: boolean, timeout: boolean }>((resolve) => 
+            setTimeout(() => resolve({ value: undefined, done: true, timeout: true }), 150)
+          )
+        ]);
+        
+        if ((value as any).timeout) {
+            consecutiveTimeouts++;
+            // We want to be sure it's really empty, so wait for 2 timeouts in a row
+            if (consecutiveTimeouts >= 2) {
+                console.log('[CDC] Buffer clear complete (silence detected).');
+                break;
+            }
+            continue;
+        }
+
+        if (done) {
+            console.log('[CDC] Stream closed while clearing.');
+            break;
+        }
+        
+        if (value && value.byteLength > 0) {
+          console.log(`[CDC] Discarding ${value.byteLength} stale bytes from buffer.`);
+          // Reset timeout counter if we found data
+          consecutiveTimeouts = 0;
+        }
+      }
+    } catch (e) {
+      console.warn("Error clearing CDC buffer:", e);
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /**
    * Sends a file to the device using the (filename, size, data) protocol.
    * It acquires a writer, sends the data, and releases the writer.
    */

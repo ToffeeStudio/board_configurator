@@ -18,8 +18,6 @@ import * as Lighting from './configure-panes/lighting';
 import * as SaveLoad from './configure-panes/save-load';
 import * as RotaryEncoder from './configure-panes/custom/satisfaction75';
 import {makeCustomMenus} from './configure-panes/custom/menu-generator';
-import {LayerControl} from './configure-panes/layer-control';
-import {Badge} from './configure-panes/badge';
 import GlowTooltip from '../toffee_studio/GlowTooltip/GlowTooltip';
 import {useAppSelector} from 'src/store/hooks';
 import {getSelectedDefinition} from 'src/store/definitionsSlice';
@@ -206,25 +204,6 @@ const ConfigureGrid = () => {
 
   return (
     <>
-      <ConfigureFlexCell
-        onClick={(evt) => {
-          if ((evt.target as any).nodeName !== 'CANVAS')
-            dispatch(clearSelectedKey());
-        }}
-        style={{
-          pointerEvents: 'none',
-          position: 'absolute',
-          top: 50,
-          left: 0,
-          right: 0,
-        }}
-      >
-        <div style={{pointerEvents: 'all'}}>
-          <LayerControl />
-          <Badge />
-        </div>
-      </ConfigureFlexCell>
-      
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', pointerEvents: 'none' }}>
         <HorizontalMenuContainer>
           <GlowingMenu 
@@ -236,12 +215,19 @@ const ConfigureGrid = () => {
 
         <div style={{ flex: 1, overflow: 'auto', pointerEvents: 'all', position: 'relative' }}>
           {SelectedPane && (
-            <PaneAnimationGrid key={selectedRow}>
+            <PaneAnimationWrapper key={selectedRow}>
               <SelectedPane />
-            </PaneAnimationGrid>
+            </PaneAnimationWrapper>
           )}
         </div>
       </div>
     </>
   );
 };
+
+// Re-using the animation wrapper from design.tsx/others for consistent transition
+const PaneAnimationWrapper = styled.div`
+  height: 100%;
+  width: 100%;
+  animation: ${fadeSlideIn} 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+`;

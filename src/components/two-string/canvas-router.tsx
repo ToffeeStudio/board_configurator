@@ -29,6 +29,8 @@ import {useLocation} from 'wouter';
 import {ConfigureKeyboard} from '../n-links/keyboard/configure';
 import {Design} from '../n-links/keyboard/design';
 import {Test} from '../n-links/keyboard/test';
+import {LayerControl} from '../panes/configure-panes/layer-control';
+import {Badge} from '../panes/configure-panes/badge';
 import KeyboardCaseImg from '../../assets/images/case.png';
 
 const fadeSlideIn = keyframes`
@@ -240,6 +242,18 @@ export const CanvasRouter = () => {
       >
         {hideCanvasScene ? null : (
           <>
+            {/* 
+              Tethered Controls (Layer + Badge) 
+              Wrapped in a div to stop click propagation to the container background (which clears selection)
+            */}
+            <div 
+              style={{pointerEvents: 'all', position: 'absolute', top: 0, left: 0, width: '100%', height: 0, zIndex: 30}}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <LayerControl />
+              <Badge />
+            </div>
+
             <KeyboardBG
               onClick={terrainOnClick}
               $color={accentColor}

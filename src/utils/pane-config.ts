@@ -12,6 +12,7 @@ import {Debug} from '../components/panes/debug';
 import {DesignTab} from '../components/panes/design';
 import {Settings} from '../components/panes/settings';
 import {Test} from '../components/panes/test';
+import {ToffeeTestPane} from '../components/panes/toffee-test';
 import {DisplayPane} from '../components/panes/display';
 import {ErrorsPaneConfig} from '../components/panes/errors';
 import {ToffeeLighting} from '../components/panes/toffee-lighting';
@@ -65,6 +66,13 @@ export default [
     icon: faLightbulb,
     path: '/toffee-lighting',
     title: 'Lighting',
+  },
+  {
+    key: 'toffee-test',
+    component: ToffeeTestPane,
+    icon: faDisplay,
+    path: '/toffee-test',
+    title: 'Toffee Test [DEPRECATED]',
   },
   ErrorsPaneConfig,
 ];
