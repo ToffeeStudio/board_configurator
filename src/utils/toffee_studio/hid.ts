@@ -234,24 +234,14 @@ export class ToffeeFileSystemAPI {
   public async ls_all(cdc: ToffeeCDC): Promise<{ filename: string; data: Uint8Array }[]> {
     console.log(`[ls_all] Sending command 0x${CommandID.MODULE_CMD_LS_ALL.toString(16)} via HID to trigger CDC dump...`);
     
-    // 1. Ensure CDC is clean before triggering the dump.
-    if (cdc.isConnected()) {
-        console.log('[ls_all] Clearing stale CDC data...');
-        await cdc.clearBuffer();
-    }
-
-    // 2. Add a small safety delay after clearing, before triggering new data
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 3. Send the HID command to trigger the CDC dump
+    // 1. Send the HID command to trigger the CDC dump
     await this.hid.sendPacketOnly(CommandID.MODULE_CMD_LS_ALL);
     console.log('[ls_all] HID command sent.');
 
-    // 4. Wait for the device and OS to initialize the CDC transfer.
-    // Firmware sleeps 1000ms. We wait 1100ms to be safe and ensure data is ready or streaming.
-    await new Promise(resolve => setTimeout(resolve, 1100));
+    // 2. Wait for the device and OS to initialize the CDC transfer
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // 5. Check for CDC connection and start receiving files
+    // 3. Check for CDC connection and start receiving files
     if (!cdc.isConnected()) {
         console.error("[ls_all] CDC port is not connected. Aborting file receive.");
         return [];
@@ -259,32 +249,6 @@ export class ToffeeFileSystemAPI {
 
     console.log("[ls_all] CDC port is connected. Starting file reception...");
     return await cdc.receiveFiles();
-  }
-
-  /**
-   * Tells the device to display a specific file.
-   * Logic on device: If .araw -> plays animation. If .raw -> shows static image.
-   * @param filename The name of the file on the device (e.g., "my_image.raw")
-   */
-  public async chooseImage(filename: string): Promise<void> {
-    console.log(`Sending Choose Image command for: ${filename}`);
-
-    // Convert string to Uint8Array
-    const encoder = new TextEncoder();
-    const data = encoder.encode(filename);
-
-    // Send command 0x5C (MODULE_CMD_CHOOSE_IMAGE)
-    // The device executes this immediately; wait for the response code.
-    const [retCode] = await this.hid.executeCommand(
-      CommandID.MODULE_CMD_CHOOSE_IMAGE,
-      data
-    );
-
-    if (retCode !== ReturnCode.SUCCESS) {
-      throw new Error(`Failed to set image. Device returned: 0x${retCode.toString(16)}`);
-    }
-    
-    console.log("Image set successfully.");
   }
 }
 

@@ -66,58 +66,6 @@ export class ToffeeCDC {
   }
 
   /**
-   * Drains the serial buffer of any stale data.
-   * Crucial to call before initiating a new file transfer sequence to prevent
-   * leftover bytes from being misinterpreted as headers/sizes.
-   */
-  public async clearBuffer(): Promise<void> {
-    if (!this.isConnected() || !this.port?.readable) return;
-
-    // We need to acquire a lock to read
-    const reader = this.port.readable.getReader();
-    try {
-      console.log('[CDC] Clearing buffer...');
-      let consecutiveTimeouts = 0;
-      
-      // Read repeatedly until we get "silence" (timeouts)
-      while (true) {
-        // Race the read against a short timeout (150ms)
-        const { value, done } = await Promise.race([
-          reader.read().then(res => ({ ...res, timeout: false })),
-          new Promise<{ value: undefined, done: boolean, timeout: boolean }>((resolve) => 
-            setTimeout(() => resolve({ value: undefined, done: true, timeout: true }), 150)
-          )
-        ]);
-        
-        if ((value as any).timeout) {
-            consecutiveTimeouts++;
-            // We want to be sure it's really empty, so wait for 2 timeouts in a row
-            if (consecutiveTimeouts >= 2) {
-                console.log('[CDC] Buffer clear complete (silence detected).');
-                break;
-            }
-            continue;
-        }
-
-        if (done) {
-            console.log('[CDC] Stream closed while clearing.');
-            break;
-        }
-        
-        if (value && value.byteLength > 0) {
-          console.log(`[CDC] Discarding ${value.byteLength} stale bytes from buffer.`);
-          // Reset timeout counter if we found data
-          consecutiveTimeouts = 0;
-        }
-      }
-    } catch (e) {
-      console.warn("Error clearing CDC buffer:", e);
-    } finally {
-      reader.releaseLock();
-    }
-  }
-
-  /**
    * Sends a file to the device using the (filename, size, data) protocol.
    * It acquires a writer, sends the data, and releases the writer.
    */
@@ -140,6 +88,8 @@ export class ToffeeCDC {
       console.log(
         `Sending filename: ${filename} (${nullTerminatedFilename.byteLength} bytes)`,
       );
+      console.log('RAW HEX (Filename + Null):', Buffer.from(nullTerminatedFilename).toString('hex'));
+
       await writer.write(nullTerminatedFilename);
 
       // A small delay can help the firmware process the filename before the size arrives
@@ -152,6 +102,8 @@ export class ToffeeCDC {
       sizeView.setUint32(0, size, true); // `true` for little-endian
 
       console.log(`Sending size: ${size} bytes`);
+      console.log('RAW HEX (Size, 4 bytes LE):', Buffer.from(new Uint8Array(sizeBuffer)).toString('hex'));
+
       await writer.write(new Uint8Array(sizeBuffer));
 
       // Another small delay
@@ -159,6 +111,7 @@ export class ToffeeCDC {
 
       // 3. Send Actual Data
       console.log('Sending data block...');
+      console.log('RAW HEX (Data payload):', Buffer.from(data).toString('hex'));
       await writer.write(data);
       console.log('--- File transfer complete ---');
     } catch (error) {
@@ -217,6 +170,8 @@ export class ToffeeCDC {
             break;
           }
 
+          console.log('RAW HEX (Received Filename Bytes):', Buffer.from(filenameBytes).toString('hex'));
+
           const filename = new TextDecoder().decode(filenameBytes);
           console.log(`[OK] Received Filename: '${filename}'`);
     
@@ -231,6 +186,8 @@ export class ToffeeCDC {
           }
 
           const sizeBytes = streamBuffer.slice(0, 4);
+          console.log('RAW HEX (Received Size Bytes):', Buffer.from(sizeBytes).toString('hex'));
+
           const expectedSize = new DataView(sizeBytes.buffer, sizeBytes.byteOffset, sizeBytes.byteLength).getUint32(0, true);
           streamBuffer = streamBuffer.slice(4);
           console.log(`[OK] Expecting Size: ${expectedSize} bytes. Leftover data in buffer: ${streamBuffer.length} bytes.`);
@@ -248,6 +205,7 @@ export class ToffeeCDC {
           const fileData = streamBuffer.slice(0, expectedSize);
           streamBuffer = streamBuffer.slice(expectedSize);
           
+          console.log('RAW HEX (Received Data Payload):', Buffer.from(fileData).toString('hex'));
           console.log(`[OK] -> Received ${fileData.byteLength} bytes for '${filename}'.`);
           receivedFiles.push({ filename, data: fileData });
 

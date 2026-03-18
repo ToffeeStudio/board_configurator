@@ -533,21 +533,6 @@ export const DisplayPane: React.FC = () => {
     }
   };
 
-  const handleSelectFile = async (filename: string) => {
-    if (!keyboardAPI || !selectedDevice) return alert('Device not connected.');
-    try {
-      const webHidDevice = (keyboardAPI.getHID() as any)._hidDevice._device;
-      const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
-      await toffeeDevice.open();
-      
-      const fs = new ToffeeFileSystemAPI(toffeeDevice);
-      await fs.chooseImage(filename);
-      // alert(`Sent command to display: ${filename}`); // Optional feedback
-    } catch (e: any) {
-      alert(`Error setting image: ${e.message}`);
-    }
-  };
-
 
   return (
     <DisplayPaneContainer>
@@ -736,24 +721,11 @@ export const DisplayPane: React.FC = () => {
       {Object.keys(pngImageUrls).length > 0 && (
         <div>
           <hr style={{ margin: '20px 0' }} />
-          <h3>Received Images (Click to Select):</h3>
+          <h3>Received Images:</h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
             {Object.entries(pngImageUrls).map(([filename, dataUrl]) => (
-              <div 
-                key={filename} 
-                onClick={() => handleSelectFile(filename)}
-                style={{ 
-                  textAlign: 'center', 
-                  border: '1px solid #ddd', 
-                  padding: '5px',
-                  cursor: 'pointer',
-                  transition: 'transform 0.1s ease',
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                title="Click to set as active display"
-              >
-                <img src={dataUrl} alt={filename} style={{ width: '128px', height: '128px', display: 'block' }} />
+              <div key={filename} style={{ textAlign: 'center', border: '1px solid #ddd', padding: '5px' }}>
+                <img src={dataUrl} alt={filename} title={filename} style={{ width: '128px', height: '128px', display: 'block' }} />
                 <p style={{ margin: '5px 0 0 0', fontSize: '12px' }}>{filename}</p>
               </div>
             ))}
