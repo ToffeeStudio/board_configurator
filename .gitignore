@@ -3,6 +3,5 @@
 .snowpack
 build
 node_modules
-public/definitions
 dist
 dist-ssr
