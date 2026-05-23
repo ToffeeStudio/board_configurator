@@ -49,11 +49,30 @@ declare module '*.png' {
 
 /* CUSTOM: ADD YOUR OWN HERE */
 
-declare global {
-  interface Navigator {
-    keyboard: {
-      unlock(): Promise<void>;
-      lock(): Promise<void>;
-    };
-  }
+interface SerialPortFilter {
+  usbVendorId?: number;
+  usbProductId?: number;
+}
+
+interface SerialPortRequestOptions {
+  filters?: SerialPortFilter[];
+}
+
+interface SerialPort {
+  readable: ReadableStream<Uint8Array> | null;
+  writable: WritableStream<Uint8Array> | null;
+  open(options: {baudRate: number}): Promise<void>;
+  close(): Promise<void>;
+}
+
+interface Serial {
+  requestPort(options?: SerialPortRequestOptions): Promise<SerialPort>;
+}
+
+interface Navigator {
+  serial: Serial;
+  keyboard: {
+    unlock(): Promise<void>;
+    lock(): Promise<void>;
+  };
 }
