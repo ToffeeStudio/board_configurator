@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer';
+import {Buffer} from 'buffer';
 
 export class ToffeeCDC {
   private port: SerialPort | null = null;
@@ -13,10 +13,7 @@ export class ToffeeCDC {
    * Prompts the user to select a serial port and opens it.
    * This method does NOT start a read loop. It only establishes the connection.
    */
-  public async connect(
-    vendorId: number,
-    productId: number,
-  ): Promise<boolean> {
+  public async connect(vendorId: number, productId: number): Promise<boolean> {
     try {
       if (this.isConnected()) {
         await this.disconnect();
@@ -48,7 +45,7 @@ export class ToffeeCDC {
         console.warn('Error cancelling reader:', error);
       }
     }
-    
+
     if (this.port) {
       try {
         // The port needs to be unlocked before it can be closed.
@@ -64,7 +61,6 @@ export class ToffeeCDC {
       }
     }
   }
-
 
   /**
    * Sends a file to the device using the (filename, size, data) protocol.
@@ -86,7 +82,9 @@ export class ToffeeCDC {
       nullTerminatedFilename.set(filenameBytes, 0);
       nullTerminatedFilename[filenameBytes.length] = 0;
 
-      console.log(`Sending filename: ${filename} (${nullTerminatedFilename.byteLength} bytes)`);
+      console.log(
+        `Sending filename: ${filename} (${nullTerminatedFilename.byteLength} bytes)`,
+      );
       await writer.write(nullTerminatedFilename);
       await new Promise((resolve) => setTimeout(resolve, 100)); // Crucial delay for firmware
 
@@ -122,19 +120,23 @@ export class ToffeeCDC {
    * @param timeoutMs The maximum time to wait for the first byte of a new file.
    * @returns A promise that resolves to an array of received files.
    */
-  public async receiveFiles(timeoutMs: number = 3000): Promise<{ filename: string; data: Uint8Array }[]> {
+  public async receiveFiles(
+    timeoutMs: number = 3000,
+  ): Promise<{filename: string; data: Uint8Array}[]> {
     if (!this.isConnected() || !this.port?.readable) {
       throw new Error('CDC port is not connected or not readable.');
     }
 
-    const receivedFiles: { filename: string; data: Uint8Array }[] = [];
+    const receivedFiles: {filename: string; data: Uint8Array}[] = [];
     let streamBuffer = new Uint8Array();
-    this.reader = this.port.readable.getReader();
+    const reader = this.port.readable.getReader();
+    this.reader = reader;
 
     // Helper function to create a timeout promise
-    const readTimeout = (ms: number) => new Promise((_, reject) => 
-        setTimeout(() => reject(new Error(`Read timed out after ${ms}ms`)), ms)
-    );
+    const readTimeout = (ms: number) =>
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Read timed out after ${ms}ms`)), ms),
+      );
 
     try {
       console.log('Starting file reception loop...');
@@ -143,14 +145,17 @@ export class ToffeeCDC {
           // --- 1. Find the next filename in the stream ---
           let nullIndex = -1;
           while (nullIndex === -1) {
-            const { value } = await Promise.race([this.reader.read(), readTimeout(timeoutMs)]) as ReadableStreamReadResult<Uint8Array>;
+            const {value} = (await Promise.race([
+              reader.read(),
+              readTimeout(timeoutMs),
+            ])) as ReadableStreamReadResult<Uint8Array>;
             if (!value) continue;
 
             const newData = new Uint8Array(streamBuffer.length + value.length);
             newData.set(streamBuffer);
             newData.set(value, streamBuffer.length);
             streamBuffer = newData;
-            
+
             nullIndex = streamBuffer.indexOf(0);
           }
 
@@ -158,16 +163,21 @@ export class ToffeeCDC {
           streamBuffer = streamBuffer.slice(nullIndex + 1);
 
           if (filenameBytes.length === 0) {
-            console.log('Received termination signal (empty filename). Transfer complete.');
+            console.log(
+              'Received termination signal (empty filename). Transfer complete.',
+            );
             break;
           }
 
           const filename = new TextDecoder().decode(filenameBytes);
           console.log(`[OK] Received Filename: '${filename}'`);
-    
+
           // --- 2. Get the file size (4 bytes) ---
           while (streamBuffer.length < 4) {
-            const { value } = await Promise.race([this.reader.read(), readTimeout(timeoutMs)]) as ReadableStreamReadResult<Uint8Array>;
+            const {value} = (await Promise.race([
+              reader.read(),
+              readTimeout(timeoutMs),
+            ])) as ReadableStreamReadResult<Uint8Array>;
             if (!value) continue;
             const newData = new Uint8Array(streamBuffer.length + value.length);
             newData.set(streamBuffer);
@@ -176,13 +186,22 @@ export class ToffeeCDC {
           }
 
           const sizeBytes = streamBuffer.slice(0, 4);
-          const expectedSize = new DataView(sizeBytes.buffer, sizeBytes.byteOffset, sizeBytes.byteLength).getUint32(0, true);
+          const expectedSize = new DataView(
+            sizeBytes.buffer,
+            sizeBytes.byteOffset,
+            sizeBytes.byteLength,
+          ).getUint32(0, true);
           streamBuffer = streamBuffer.slice(4);
-          console.log(`[OK] Expecting Size: ${expectedSize} bytes. Leftover data in buffer: ${streamBuffer.length} bytes.`);
-    
+          console.log(
+            `[OK] Expecting Size: ${expectedSize} bytes. Leftover data in buffer: ${streamBuffer.length} bytes.`,
+          );
+
           // --- 3. Get the file data ---
           while (streamBuffer.length < expectedSize) {
-            const { value } = await Promise.race([this.reader.read(), readTimeout(timeoutMs)]) as ReadableStreamReadResult<Uint8Array>;
+            const {value} = (await Promise.race([
+              reader.read(),
+              readTimeout(timeoutMs),
+            ])) as ReadableStreamReadResult<Uint8Array>;
             if (!value) continue;
             const newData = new Uint8Array(streamBuffer.length + value.length);
             newData.set(streamBuffer);
@@ -192,14 +211,17 @@ export class ToffeeCDC {
 
           const fileData = streamBuffer.slice(0, expectedSize);
           streamBuffer = streamBuffer.slice(expectedSize);
-          
-          console.log(`[OK] -> Received ${fileData.byteLength} bytes for '${filename}'.`);
-          receivedFiles.push({ filename, data: fileData });
 
+          console.log(
+            `[OK] -> Received ${fileData.byteLength} bytes for '${filename}'.`,
+          );
+          receivedFiles.push({filename, data: fileData});
         } catch (error: any) {
           // If the error is our specific timeout error, it means the transfer is done.
           if (error.message.startsWith('Read timed out')) {
-            console.log('Read timed out, assuming transfer is complete. This is the expected success path.');
+            console.log(
+              'Read timed out, assuming transfer is complete. This is the expected success path.',
+            );
             break; // Exit the main while loop
           }
           // If it's a different error, re-throw it.
@@ -207,14 +229,15 @@ export class ToffeeCDC {
         }
       }
     } catch (error) {
-        console.error('An unexpected error occurred during file reception:', error);
+      console.error(
+        'An unexpected error occurred during file reception:',
+        error,
+      );
     } finally {
-      if (this.reader) {
-        this.reader.releaseLock();
-        this.reader = null;
-      }
+      reader.releaseLock();
+      this.reader = null;
     }
-    
+
     return receivedFiles;
   }
 }
