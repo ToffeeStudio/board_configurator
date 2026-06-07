@@ -28,6 +28,7 @@ export enum CommandID {
   MODULE_CMD_SET_BRIGHTNESS = 0x74,
   MODULE_CMD_SET_COLOR_HS = 0x75,
   MODULE_CMD_GET_LIGHTING_STATE = 0x76,
+  MODULE_CMD_SET_LED_BRIGHTNESS = 0x7b,
 }
 
 /**
@@ -286,6 +287,16 @@ export class ToffeeLightingAPI {
     const payload = new Uint8Array([brightness]);
     // Changed to executeCommand to wait for a response.
     await this.hid.executeCommand(CommandID.MODULE_CMD_SET_BRIGHTNESS, payload);
+  }
+
+  /**
+   * Sets the brightness of a single LED, on top of the global brightness.
+   * @param ledIndex The LED index (0-based).
+   * @param brightness 255 = full, 0 = off.
+   */
+  public async setLedBrightness(ledIndex: number, brightness: number): Promise<void> {
+    const payload = new Uint8Array([ledIndex, brightness]);
+    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_LED_BRIGHTNESS, payload);
   }
 
   /**

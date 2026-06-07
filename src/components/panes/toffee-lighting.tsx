@@ -5,6 +5,7 @@ import { faLightbulb } from '@fortawesome/free-solid-svg-icons';
 import { Pane as BasePane, CenterPane } from './pane';
 import { Grid, SpanOverflowCell } from './grid';
 import { ToffeeLightingMenu } from '../toffee_studio/toffee-lighting-menu';
+import { FrontLedMenu } from '../toffee_studio/front-led-menu';
 import { Pane as FrontLightingPane } from './configure-panes/lighting';
 import { GlowingMenu } from '../toffee_studio/GlowingMenu/GlowingMenu';
 import { useAppSelector } from 'src/store/hooks';
@@ -55,7 +56,7 @@ const TwoColumnGrid = styled(Grid)`
 // This is the main component for the pane, which will be rendered when the tab is clicked.
 export const ToffeeLighting: FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
-  const items = ['Underglow', 'Front Lighting'];
+  const items = ['Underglow', 'Front Lighting', 'Per-Key LED'];
   
   const selectedDefinition = useAppSelector(getSelectedDefinition);
   const v3Menus = useAppSelector(getV3MenuComponents);
@@ -97,6 +98,15 @@ export const ToffeeLighting: FC = () => {
                 <LightingPane>
                   <Container>
                     <ToffeeLightingMenu />
+                  </Container>
+                </LightingPane>
+              </SpanOverflowCell>
+            ) : selectedTab === 2 ? (
+              /* Per-Key Front LED Tab */
+              <SpanOverflowCell style={{ flex: 1, borderWidth: 0 }}>
+                <LightingPane>
+                  <Container>
+                    <FrontLedMenu />
                   </Container>
                 </LightingPane>
               </SpanOverflowCell>
