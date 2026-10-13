@@ -1,4 +1,4 @@
-import { FC, useState, useMemo } from 'react';
+import { FC, useState } from 'react';
 import styled from 'styled-components';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLightbulb } from '@fortawesome/free-solid-svg-icons';
@@ -6,12 +6,11 @@ import { Pane as BasePane, CenterPane } from './pane';
 import { Grid, SpanOverflowCell } from './grid';
 import { ToffeeLightingMenu } from '../toffee_studio/toffee-lighting-menu';
 import { FrontLedMenu } from '../toffee_studio/front-led-menu';
-import { Pane as FrontLightingPane } from './configure-panes/lighting';
+import { GroupLightingMenu } from '../toffee_studio/group-lighting-menu';
 import { GlowingMenu } from '../toffee_studio/GlowingMenu/GlowingMenu';
-import { useAppSelector } from 'src/store/hooks';
-import { getSelectedDefinition } from 'src/store/definitionsSlice';
-import { getV3MenuComponents } from 'src/store/menusSlice';
-import { isVIADefinitionV2, isVIADefinitionV3 } from '@the-via/reader';
+import {PowerDebug} from '../toffee_studio/power-debug';
+import {useAppSelector} from 'src/store/hooks';
+import {getSelectedKeyboardAPI} from 'src/store/devicesSlice';
 
 // This is the title that will appear in the tooltip for the tab icon.
 export const Title = 'Lighting';
@@ -55,30 +54,11 @@ const TwoColumnGrid = styled(Grid)`
 
 // This is the main component for the pane, which will be rendered when the tab is clicked.
 export const ToffeeLighting: FC = () => {
+  const keyboard = useAppSelector(getSelectedKeyboardAPI);
+  const device = keyboard ? keyboard.getHID()._hidDevice!._device : null;
   const [selectedTab, setSelectedTab] = useState(0);
-  const items = ['Underglow', 'Front Lighting', 'Per-Key LED'];
+  const items = ['Underglow', 'Front Lighting', 'Per-Key LED', 'Badge'];
   
-  const selectedDefinition = useAppSelector(getSelectedDefinition);
-  const v3Menus = useAppSelector(getV3MenuComponents);
-
-  const FrontLightingComponent = useMemo(() => {
-    if (!selectedDefinition) return null;
-
-    if (isVIADefinitionV2(selectedDefinition)) {
-      return FrontLightingPane;
-    } 
-    
-    if (isVIADefinitionV3(selectedDefinition)) {
-      // Find the V3 menu that corresponds to Lighting. 
-      // Usually titled 'Lighting' or 'Backlight' in the definition.
-      const lightingMenu = v3Menus.find(m => m.Title === 'Lighting' || m.Title === 'Backlight');
-      if (lightingMenu) {
-        return lightingMenu.Pane;
-      }
-    }
-    return null;
-  }, [selectedDefinition, v3Menus]);
-
   return (
     <BasePane>
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
@@ -89,6 +69,7 @@ export const ToffeeLighting: FC = () => {
             onChange={setSelectedTab} 
           />
         </MenuContainer>
+        <PowerDebug device={device}/>
         
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
           <TwoColumnGrid>
@@ -112,8 +93,12 @@ export const ToffeeLighting: FC = () => {
               </SpanOverflowCell>
             ) : (
               /* Front Lighting Tab */
-              FrontLightingComponent ? (
-                <FrontLightingComponent />
+              selectedTab === 1 || selectedTab === 3 ? (
+                <SpanOverflowCell style={{ flex: 1, borderWidth: 0 }}>
+                  <LightingPane><Container>
+                    <GroupLightingMenu key={selectedTab} group={selectedTab === 1 ? 'front' : 'badge'}/>
+                  </Container></LightingPane>
+                </SpanOverflowCell>
               ) : (
                 <SpanOverflowCell style={{ flex: 1, borderWidth: 0 }}>
                   <LightingPane>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAppSelector } from 'src/store/hooks';
 import { getSelectedKeyboardAPI } from 'src/store/devicesSlice';
 import { ToffeeLightingAPI, ToffeeHIDDevice } from 'src/utils/toffee_studio/hid';
@@ -7,14 +7,7 @@ import GlowRange from './GlowRange/GlowRange';
 import { ArrayColorPicker } from 'src/components/inputs/color-picker';
 import { ControlRow, Label, Detail } from 'src/components/panes/grid';
 
-// Define the structure for the lighting state
-interface LightingState {
-  effect: number;
-  speed: number;
-  brightness: number;
-  hue: number;
-  saturation: number;
-}
+type LightingState = Awaited<ReturnType<ToffeeLightingAPI['getLightingState']>>;
 
 // Hard-coded options for the Effect dropdown, matching the definition file
 const EFFECT_OPTIONS = [
@@ -31,98 +24,81 @@ const EFFECT_OPTIONS = [
 ];
 
 export const ToffeeLightingMenu: React.FC = () => {
-  // 1. Get the keyboard API from Redux to access the underlying HID device
   const keyboardAPI = useAppSelector(getSelectedKeyboardAPI);
-
-  // 2. Initialize the ToffeeLightingAPI using a memo to prevent re-creation on every render
   const toffeeLightingApi = useMemo(() => {
-    if (!keyboardAPI) {
-      console.log("ToffeeLightingMenu: keyboardAPI is not available.");
-      return null;
-    }
-    try {
-      // Extract the raw WebHID device from the keyboardAPI wrapper
-      const webHidDevice = (keyboardAPI.getHID() as any)._hidDevice._device;
-      if (!webHidDevice) {
-        console.error("ToffeeLightingMenu: Could not get the underlying WebHID device.");
-        return null;
-      }
-      const toffeeDevice = new ToffeeHIDDevice(webHidDevice);
-      // The API methods will handle opening the device as needed.
-      return new ToffeeLightingAPI(toffeeDevice);
-    } catch (e) {
-      console.error("Failed to initialize ToffeeLightingAPI", e);
-      return null;
-    }
+    if (!keyboardAPI) return null;
+    const webHidDevice = keyboardAPI.getHID()._hidDevice!._device;
+    return new ToffeeLightingAPI(new ToffeeHIDDevice(webHidDevice));
   }, [keyboardAPI]);
-
-  // 3. Manage the lighting state locally within this component
+  const currentApi = useRef(toffeeLightingApi);
+  currentApi.current = toffeeLightingApi;
   const [lightingState, setLightingState] = useState<LightingState | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
 
-  // 4. Fetch the initial state from the device when the component mounts or the API becomes available
   useEffect(() => {
-    const fetchInitialState = async () => {
-      if (toffeeLightingApi) {
-        try {
-          console.log("Fetching initial lighting state...");
-          const currentState = await toffeeLightingApi.getLightingState();
-          setLightingState(currentState);
-          console.log("Initial lighting state received:", currentState);
-        } catch (error) {
-          console.error("Failed to fetch initial lighting state:", error);
-          setLightingState(null); // Set to null on error to show a message
-        }
-      }
-    };
+    let active = true;
+    setLightingState(null);
+    setError(null);
+    if (toffeeLightingApi) {
+      console.log('Underglow: loading settings.');
+      toffeeLightingApi.getCapabilities().then(() => toffeeLightingApi.getLightingState())
+        .then((state) => {
+          if (active) setLightingState(state);
+        })
+        .catch((error: Error) => {
+          console.error('Underglow: load failed.', error);
+          if (active) setError(error.message);
+        });
+    }
+    return () => { active = false; };
+  }, [toffeeLightingApi, retry]);
 
-    fetchInitialState();
-  }, [toffeeLightingApi]); // This effect re-runs if the keyboard connection changes
-
-  // 5. Define event handlers for each UI control
-  const handleEffectChange = (option: { value: number; label: string } | null) => {
-    if (option && toffeeLightingApi && lightingState) {
-      const effectId = option.value;
-      toffeeLightingApi.setAnimation(effectId);
-      setLightingState({ ...lightingState, effect: effectId });
+  const updateLighting = async (
+    command: Promise<void>,
+    change: Partial<LightingState>,
+  ) => {
+    setLightingState((state) => ({ ...state!, ...change }));
+    try {
+      await command;
+    } catch (error) {
+      console.error('Underglow: update failed.', error);
+      if (currentApi.current === toffeeLightingApi) setError((error as Error).message);
     }
   };
 
-  const handleBrightnessChange = (value: number) => {
-    if (toffeeLightingApi && lightingState) {
-      toffeeLightingApi.setBrightness(value);
-      setLightingState({ ...lightingState, brightness: value });
-    }
-  };
-
-  const handleSpeedChange = (value: number) => {
-    if (toffeeLightingApi && lightingState) {
-      toffeeLightingApi.setSpeed(value);
-      setLightingState({ ...lightingState, speed: value });
-    }
-  };
-
-  const handleColorChange = (hue: number, sat: number) => {
-    if (toffeeLightingApi && lightingState) {
-      toffeeLightingApi.setColor(hue, sat);
-      setLightingState({ ...lightingState, hue, saturation: sat });
-    }
-  };
-
-  // Render a loading state until the initial device state has been fetched
-  if (!lightingState || !toffeeLightingApi) {
-    return <div>Loading Underglow Settings... Please ensure your device is connected.</div>;
+  if (!toffeeLightingApi) {
+    return <div>Connect and select your board to configure underglow.</div>;
+  }
+  if (error) {
+    return (
+      <div role="alert">
+        <p>Unable to configure underglow: {error}</p>
+        <button onClick={() => setRetry((value) => value + 1)}>Retry</button>
+      </div>
+    );
+  }
+  if (!lightingState) {
+    return <div>Loading Underglow Settings...</div>;
   }
 
-  // 6. Render the UI using reusable components and the local state
   return (
     <>
       <ControlRow>
         <Label>Effect</Label>
         <Detail>
           <AccentSelect
+            aria-label="Underglow effect"
             options={EFFECT_OPTIONS}
             value={EFFECT_OPTIONS.find(opt => opt.value === lightingState.effect)}
-            onChange={handleEffectChange}
+            onChange={(value) => {
+              const option = value as { value: number; label: string } | null;
+              if (option) {
+                void updateLighting(toffeeLightingApi.setAnimation(option.value), {
+                  effect: option.value,
+                });
+              }
+            }}
           />
         </Detail>
       </ControlRow>
@@ -131,10 +107,13 @@ export const ToffeeLightingMenu: React.FC = () => {
         <Label>Brightness</Label>
         <Detail>
           <GlowRange
+            aria-label="Underglow brightness"
             min={0}
             max={255}
             value={lightingState.brightness}
-            onChange={handleBrightnessChange}
+            onChange={(brightness) => {
+              void updateLighting(toffeeLightingApi.setBrightness(brightness), { brightness });
+            }}
           />
         </Detail>
       </ControlRow>
@@ -143,10 +122,13 @@ export const ToffeeLightingMenu: React.FC = () => {
         <Label>Speed</Label>
         <Detail>
           <GlowRange
+            aria-label="Underglow speed"
             min={0}
             max={255}
             value={lightingState.speed}
-            onChange={handleSpeedChange}
+            onChange={(speed) => {
+              void updateLighting(toffeeLightingApi.setSpeed(speed), { speed });
+            }}
           />
         </Detail>
       </ControlRow>
@@ -156,10 +138,13 @@ export const ToffeeLightingMenu: React.FC = () => {
         <Detail>
           <ArrayColorPicker
             color={[lightingState.hue, lightingState.saturation]}
-            setColor={handleColorChange}
+            setColor={(hue, saturation) => {
+              void updateLighting(toffeeLightingApi.setColor(hue, saturation), { hue, saturation });
+            }}
           />
         </Detail>
       </ControlRow>
+      <p>Normal firmware saves changes after a one-second pause. Temporary test firmware does not save.</p>
     </>
   );
 };

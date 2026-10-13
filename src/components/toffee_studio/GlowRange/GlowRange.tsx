@@ -3,7 +3,7 @@ import { RangeInput } from './GlowRangeStyledComponents';
 import { useAppSelector } from 'src/store/hooks';
 import { getSelectedTheme } from 'src/store/settingsSlice';
 
-interface GlowRangeProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+interface GlowRangeProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'type'> {
   onChange: (value: number) => void;
 }
 
