@@ -1,18 +1,17 @@
 import '@webscopeio/react-textarea-autocomplete/style.css';
 import {createRoot} from 'react-dom/client';
 import './app.global.css';
-import Root from './containers/Root';
-import {updateCSSVariables} from './utils/color-math';
-import {
-  getThemeModeFromStore,
-  getThemeNameFromStore,
-} from './utils/device-store';
-import {THEMES} from './utils/themes';
+import {DEBUG_ENABLED, FIRMWARE_PATH} from './config/debug';
 
 const elem = document.getElementById('root');
 if (elem) {
-  const root = createRoot(elem);
-  root.render(<Root />);
-  document.documentElement.dataset['themeMode'] = getThemeModeFromStore();
-  updateCSSVariables(getThemeNameFromStore() as keyof typeof THEMES);
+  if (window.location.pathname === FIRMWARE_PATH) {
+    // Do not import Redux/VIA/theme initialization or GLTF preloads in updater.
+    const root = createRoot(elem);
+    if (DEBUG_ENABLED) {
+      import('./components/panes/firmware-update').then(({FirmwareUpdate}) => root.render(<FirmwareUpdate/>));
+    } else root.render(<p>Debug mode is disabled.</p>);
+  } else {
+    import('./normal-index');
+  }
 }

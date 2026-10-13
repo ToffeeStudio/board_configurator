@@ -5,14 +5,20 @@ import {
   faKeyboard,
   faStethoscope,
   faDisplay,
+  faLightbulb,
 } from '@fortawesome/free-solid-svg-icons';
 import {ConfigurePane} from '../components/panes/configure';
 import {Debug} from '../components/panes/debug';
 import {DesignTab} from '../components/panes/design';
 import {Settings} from '../components/panes/settings';
 import {Test} from '../components/panes/test';
+import {ToffeeTestPane} from '../components/panes/toffee-test';
 import {DisplayPane} from '../components/panes/display';
 import {ErrorsPaneConfig} from '../components/panes/errors';
+import {ToffeeLighting} from '../components/panes/toffee-lighting';
+import {ToffeeDebug} from '../components/panes/toffee-debug';
+import {DEBUG_ENABLED, MEASUREMENT_PATH, FIRMWARE_PATH} from '../config/debug';
+import {FirmwareUpdate} from '../components/panes/firmware-update';
 
 export default [
   {
@@ -22,34 +28,34 @@ export default [
     title: 'Configure',
     path: '/',
   },
-  {
-    key: 'test',
-    component: Test,
-    icon: faStethoscope,
-    path: '/test',
-    title: 'Key Tester',
-  },
-  {
-    key: 'design',
-    component: DesignTab,
-    icon: faBrush,
-    path: '/design',
-    title: 'Design',
-  },
-  {
-    key: 'settings',
-    component: Settings,
-    icon: faGear,
-    path: '/settings',
-    title: 'Settings',
-  },
-  {
-    key: 'debug',
-    icon: faBug,
-    component: Debug,
-    path: '/debug',
-    title: 'Debug',
-  },
+  // {
+  //   key: 'test',
+  //   component: Test,
+  //   icon: faStethoscope,
+  //   path: '/test',
+  //   title: 'Key Tester',
+  // },
+  // {
+  //   key: 'design',
+  //   component: DesignTab,
+  //   icon: faBrush,
+  //   path: '/design',
+  //   title: 'Design',
+  // },
+  // {
+  //   key: 'settings',
+  //   component: Settings,
+  //   icon: faGear,
+  //   path: '/settings',
+  //   title: 'Settings',
+  // },
+  // {
+  //   key: 'debug',
+  //   icon: faBug,
+  //   component: Debug,
+  //   path: '/debug',
+  //   title: 'Debug',
+  // },
   {
     key: 'display',
     component: DisplayPane,
@@ -57,5 +63,25 @@ export default [
     path: '/display',
     title: 'Display',
   },
+  {
+    key: 'toffee-lighting',
+    component: ToffeeLighting,
+    icon: faLightbulb,
+    path: '/toffee-lighting',
+    title: 'Lighting',
+  },
+  ...(DEBUG_ENABLED ? [{
+    key: 'firmware-update', component: FirmwareUpdate, icon: faGear,
+    path: FIRMWARE_PATH, title: 'Firmware Update',
+  }, {
+    key: 'toffee-debug', component: ToffeeDebug, icon: faBug,
+    path: MEASUREMENT_PATH, title: 'Lighting Debug',
+  }, {
+    key: 'toffee-test',
+    component: ToffeeTestPane,
+    icon: faDisplay,
+    path: '/toffee-test',
+    title: 'Toffee Test [DEPRECATED]',
+  }] : []),
   ErrorsPaneConfig,
 ];

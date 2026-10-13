@@ -17,22 +17,18 @@ export const Cell = styled.div`
 
 export const MenuCell = styled(Cell)`
   background: var(--bg_menu);
-  border-top: 1px solid var(--border_color_cell);
 `;
 
 export const OverflowCell = styled(Cell)`
-  border-top: 1px solid var(--border_color_cell);
   overflow: auto;
 `;
 
 export const SpanOverflowCell = styled(Cell)`
-  border-top: 1px solid var(--border_color_cell);
   overflow: auto;
   grid-column: span 2;
 `;
 
 export const SubmenuCell = styled(Cell)`
-  border-top: 1px solid var(--border_color_cell);
   background: var(--bg_control);
 `;
 

@@ -1,0 +1,269 @@
+{
+  "version": 1,
+  "front": [
+    {
+      "index": 91,
+      "label": "Esc"
+    },
+    {
+      "index": 92,
+      "label": "1"
+    },
+    {
+      "index": 93,
+      "label": "2"
+    },
+    {
+      "index": 94,
+      "label": "3"
+    },
+    {
+      "index": 95,
+      "label": "4"
+    },
+    {
+      "index": 96,
+      "label": "5"
+    },
+    {
+      "index": 97,
+      "label": "6"
+    },
+    {
+      "index": 98,
+      "label": "7"
+    },
+    {
+      "index": 99,
+      "label": "8"
+    },
+    {
+      "index": 100,
+      "label": "9"
+    },
+    {
+      "index": 101,
+      "label": "0"
+    },
+    {
+      "index": 102,
+      "label": "-"
+    },
+    {
+      "index": 103,
+      "label": "="
+    },
+    {
+      "index": 83,
+      "label": "Backspace / top-right Fn"
+    },
+    {
+      "index": 50,
+      "label": "Tab"
+    },
+    {
+      "index": 51,
+      "label": "Q"
+    },
+    {
+      "index": 52,
+      "label": "W"
+    },
+    {
+      "index": 53,
+      "label": "E"
+    },
+    {
+      "index": 54,
+      "label": "R"
+    },
+    {
+      "index": 55,
+      "label": "T"
+    },
+    {
+      "index": 56,
+      "label": "Y"
+    },
+    {
+      "index": 57,
+      "label": "U"
+    },
+    {
+      "index": 58,
+      "label": "I"
+    },
+    {
+      "index": 59,
+      "label": "O"
+    },
+    {
+      "index": 60,
+      "label": "P"
+    },
+    {
+      "index": 61,
+      "label": "["
+    },
+    {
+      "index": 62,
+      "label": "]"
+    },
+    {
+      "index": 63,
+      "label": "Backslash"
+    },
+    {
+      "index": 64,
+      "label": "Delete"
+    },
+    {
+      "index": 47,
+      "label": "Caps Lock"
+    },
+    {
+      "index": 46,
+      "label": "A"
+    },
+    {
+      "index": 45,
+      "label": "S"
+    },
+    {
+      "index": 44,
+      "label": "D"
+    },
+    {
+      "index": 43,
+      "label": "F"
+    },
+    {
+      "index": 42,
+      "label": "G"
+    },
+    {
+      "index": 41,
+      "label": "H"
+    },
+    {
+      "index": 40,
+      "label": "J"
+    },
+    {
+      "index": 39,
+      "label": "K"
+    },
+    {
+      "index": 38,
+      "label": "L"
+    },
+    {
+      "index": 37,
+      "label": ";"
+    },
+    {
+      "index": 36,
+      "label": "Quote"
+    },
+    {
+      "index": 35,
+      "label": "Enter"
+    },
+    {
+      "index": 34,
+      "label": "Page Up"
+    },
+    {
+      "index": 18,
+      "label": "Left Shift"
+    },
+    {
+      "index": 19,
+      "label": "Z"
+    },
+    {
+      "index": 20,
+      "label": "X"
+    },
+    {
+      "index": 21,
+      "label": "C"
+    },
+    {
+      "index": 22,
+      "label": "V"
+    },
+    {
+      "index": 23,
+      "label": "B"
+    },
+    {
+      "index": 24,
+      "label": "N"
+    },
+    {
+      "index": 25,
+      "label": "M"
+    },
+    {
+      "index": 26,
+      "label": ","
+    },
+    {
+      "index": 27,
+      "label": "."
+    },
+    {
+      "index": 28,
+      "label": "/"
+    },
+    {
+      "index": 29,
+      "label": "Right Shift"
+    },
+    {
+      "index": 30,
+      "label": "Up"
+    },
+    {
+      "index": 31,
+      "label": "Page Down"
+    },
+    {
+      "index": 17,
+      "label": "Left Ctrl"
+    },
+    {
+      "index": 15,
+      "label": "Left GUI"
+    },
+    {
+      "index": 13,
+      "label": "Left Alt"
+    },
+    {
+      "index": 10,
+      "label": "Space"
+    },
+    {
+      "index": 7,
+      "label": "Right GUI"
+    },
+    {
+      "index": 6,
+      "label": "Fn"
+    },
+    {
+      "index": 4,
+      "label": "Left"
+    },
+    {
+      "index": 2,
+      "label": "Down"
+    },
+    {
+      "index": 0,
+      "label": "Right"
+    }
+  ]
+}

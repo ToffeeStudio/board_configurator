@@ -18,7 +18,7 @@ const GlowTooltip: React.FC<GlowTooltipProps> = ({ children, title, position = '
 
   // If the theme is not yet loaded, we can't render the glow. 
   // Render the children without a tooltip to prevent a crash.
-  if (!theme) {
+  if (!theme || !title) {
     return <>{children}</>;
   }
 

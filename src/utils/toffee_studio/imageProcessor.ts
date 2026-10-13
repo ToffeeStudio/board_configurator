@@ -1,7 +1,6 @@
-// src/utils/toffee_studio/imageProcessor.ts
+import * as GIF from 'gifuct-js';
 
 import { Buffer } from 'buffer';
-import * as GIF from 'gifuct-js';
 
 /**
  * Converts the content of a canvas to a raw RGB565 (big-endian) byte array.

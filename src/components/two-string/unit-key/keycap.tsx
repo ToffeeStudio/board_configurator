@@ -66,7 +66,7 @@ const paintKeycapLabel = (
 
   context.scale(dpi, dpi);
   const fontFamily =
-    'Fira Sans, Arial Rounded MT, Arial Rounded MT Bold, Arial';
+    'Montserrat, Arial Rounded MT, Arial Rounded MT Bold, Arial';
   // Margins from face edge to where text is drawn
   const topLabelMargin = {x: 4, y: 4};
   const bottomLabelMargin = {x: 4, y: 4};
@@ -192,7 +192,8 @@ export const Keycap: React.FC<TwoStringKeycapProps> = React.memo((props) => {
       canvasRef.current &&
       color &&
       label &&
-      (document.fonts.check('bold 16px "Fira Sans"', label.label) ||
+      // Updated to check for 'Montserrat' instead of 'Fira Sans'
+      (document.fonts.check('bold 16px "Montserrat"', label.label) ||
         skipFontCheck)
     ) {
       // Only render label if it is available

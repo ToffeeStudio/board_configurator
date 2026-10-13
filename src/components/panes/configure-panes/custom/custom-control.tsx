@@ -1,9 +1,9 @@
 import React from 'react';
 import {PelpiKeycodeInput} from '../../../inputs/pelpi/keycode-input';
 import {AccentButton} from '../../../inputs/accent-button';
-import {AccentSlider} from '../../../inputs/accent-slider';
+import GlowToggle from '../../../toffee_studio/GlowToggle/GlowToggle';
 import {AccentSelect} from '../../../inputs/accent-select';
-import {AccentRange} from '../../../inputs/accent-range';
+import GlowRange from '../../../toffee_studio/GlowRange/GlowRange';
 import {ControlRow, Label, Detail} from '../../grid';
 import type {VIADefinitionV2, VIADefinitionV3, VIAItem} from '@the-via/reader';
 import type {LightingData} from '../../../../types/types';
@@ -91,10 +91,10 @@ const VIACustomControl = (props: VIACustomControlProps) => {
     }
     case 'range': {
       return (
-        <AccentRange
+        <GlowRange
           min={options[0]}
           max={options[1]}
-          defaultValue={getRangeValue(props.value, options[1])}
+          value={getRangeValue(props.value, options[1])}
           onChange={(val: number) =>
             props.updateValue(
               name,
@@ -119,8 +119,8 @@ const VIACustomControl = (props: VIACustomControlProps) => {
     case 'toggle': {
       const toggleOptions: any[] = options || [0, 1];
       return (
-        <AccentSlider
-          isChecked={valueIsChecked(toggleOptions[1], props.value)}
+        <GlowToggle
+          value={valueIsChecked(toggleOptions[1], props.value)}
           onChange={(val) =>
             props.updateValue(
               name,

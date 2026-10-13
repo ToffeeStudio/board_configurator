@@ -12,6 +12,7 @@ import {
 import {Case} from './case';
 import {KeyGroup} from './key-group';
 import {MatrixLines} from './matrix-lines';
+
 export const KeyboardCanvas: React.FC<KeyboardCanvasProps<React.MouseEvent>> = (
   props,
 ) => {
@@ -41,7 +42,7 @@ export const KeyboardCanvas: React.FC<KeyboardCanvasProps<React.MouseEvent>> = (
   return (
     <div
       style={{
-        transform: `scale(${ratio}, ${ratio})`,
+        transform: `scale(${ratio*0.95}, ${ratio*0.95})`,
         opacity: shouldHide ? 0 : 1,
         position: 'absolute',
         pointerEvents: shouldHide ? 'none' : 'all',
@@ -51,6 +52,7 @@ export const KeyboardCanvas: React.FC<KeyboardCanvasProps<React.MouseEvent>> = (
     </div>
   );
 };
+
 const KeyboardGroup = styled.div`
   position: relative;
 `;

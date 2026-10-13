@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Toffee — direct WebUSB experiment</title></head>
+<body style="background:#120e1a;color:#eee;font:17px system-ui;padding:32px">
+<h1>Direct WebUSB firmware update experiment</h1>
+<p>Same normal firmware · profile9 ·940 mA. Chrome device permission is required.</p>
+<button id="connect">Connect Module</button>
+<button id="boot" disabled>Enter bootloader</button>
+<button id="probe" disabled>Connect RP2 & read firmware</button>
+<button id="write" disabled>Write, read back & reboot</button>
+<button id="reconnect" disabled>Reconnect & verify settings</button>
+<pre id="log" style="white-space:pre-wrap"></pre>
+<script type="module" src="./browser-webusb-experiment.ts"></script></body></html>

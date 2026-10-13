@@ -1,0 +1,12 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Toffee — real browser UF2 experiment</title></head>
+<body style="background:#120e1a;color:#eee;font:17px system-ui;padding:32px">
+<h1>Real browser UF2 experiment</h1>
+<p>Normal profile9 · 940 mA · same firmware. No lighting commands. Native browser permissions required.</p>
+<p>Close other configurator tabs before connecting. Do not unplug during the write.</p>
+<button id="connect">1. Connect Module (read only)</button>
+<button id="boot" disabled>2. Enter bootloader</button>
+<button id="select" disabled>3. Select RPI-RP2 (no write)</button>
+<button id="write" disabled>4. Write firmware once</button>
+<button id="reconnect" disabled>Reconnect & verify</button>
+<pre id="log" style="white-space:pre-wrap"></pre>
+<script type="module" src="./browser-uf2-experiment.ts"></script></body></html>

@@ -1,6 +1,6 @@
 import {useState, useMemo, FC, useCallback} from 'react';
 import styled from 'styled-components';
-import {OverflowCell, SubmenuOverflowCell, SubmenuRow} from '../grid';
+import {SpanOverflowCell, SubmenuRow} from '../grid';
 import {CenterPane} from '../pane';
 import {title, component} from '../../icons/adjust';
 import {MacroDetailPane} from './submenus/macros/macro-detail';
@@ -12,8 +12,25 @@ import {
   saveMacros,
 } from '../../../store/macrosSlice';
 
-const MacroPane = styled(CenterPane)`
+const FullHeightContainer = styled.div`
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  width: 100%;
+`;
+
+const HorizontalMenu = styled.div`
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px;
+  border-bottom: 1px solid var(--border_color_cell);
+`;
+
+const MacroPane = styled(CenterPane)`
+  flex-grow: 1;
   background: var(--color_dark_grey);
 `;
 
@@ -23,10 +40,6 @@ const Container = styled.div`
   flex-direction: column;
   padding: 12px;
   padding-top: 0;
-`;
-
-const MenuContainer = styled.div`
-  padding: 15px 10px 20px 10px;
 `;
 
 export const Pane: FC = () => {
@@ -62,7 +75,7 @@ export const Pane: FC = () => {
             $selected={selectedMacro === idx}
             onClick={() => setSelectedMacro(idx)}
             key={idx}
-            style={{borderWidth: 0, textAlign: 'center'}}
+            style={{borderWidth: 0, textAlign: 'center', marginBottom: 0}}
           >
             {`M${idx}`}
           </SubmenuRow>
@@ -74,11 +87,9 @@ export const Pane: FC = () => {
     return null;
   }
   return (
-    <>
-      <SubmenuOverflowCell>
-        <MenuContainer>{macroMenus}</MenuContainer>
-      </SubmenuOverflowCell>
-      <OverflowCell>
+    <SpanOverflowCell>
+      <FullHeightContainer>
+        <HorizontalMenu>{macroMenus}</HorizontalMenu>
         <MacroPane>
           <Container>
             <MacroDetailPane
@@ -89,8 +100,8 @@ export const Pane: FC = () => {
             />
           </Container>
         </MacroPane>
-      </OverflowCell>
-    </>
+      </FullHeightContainer>
+    </SpanOverflowCell>
   );
 };
 

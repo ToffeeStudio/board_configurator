@@ -12,12 +12,12 @@ export const THEMES = {
   ...{
     OLIVIA_DARK: {
       alpha: {
-        c: '#363434',
-        t: '#E8C4B8',
+        c: '#242233', // Deep, low-key purple-grey
+        t: 'rgba(229, 210, 250)', // White legends
       },
       mod: {
-        c: '#363434',
-        t: '#E8C4B8',
+        c: '#242233', // Matches alpha
+        t: '#FFFFFF',
       },
       accent: {
         c: 'rgba(120, 0, 245, 0.5)',

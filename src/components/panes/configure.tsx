@@ -1,10 +1,7 @@
-import React, {useState, useEffect} from 'react';
-import {faPlus} from '@fortawesome/free-solid-svg-icons';
-import styled from 'styled-components';
+import React, {useState, useEffect, useMemo} from 'react';
+import styled, {keyframes} from 'styled-components';
 import ChippyLoader from '../chippy-loader';
-import LoadingText from '../loading-text';
-import {CenterPane, ConfigureBasePane} from './pane';
-import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {ConfigureBasePane} from './pane';
 import {
   CustomFeaturesV2,
   getLightingDefinition,
@@ -13,20 +10,16 @@ import {
   VIADefinitionV2,
   VIADefinitionV3,
 } from '@the-via/reader';
-import {Grid, Row, IconContainer, MenuCell, ConfigureFlexCell} from './grid';
+import {Grid, IconContainer, MenuCell, ConfigureFlexCell, SubmenuRow} from './grid';
 import * as Keycode from './configure-panes/keycode';
-import * as Lighting from './configure-panes/lighting';
 import * as Macros from './configure-panes/macros';
-import * as SaveLoad from './configure-panes/save-load';
 import * as Layouts from './configure-panes/layouts';
+import * as Lighting from './configure-panes/lighting';
+import * as SaveLoad from './configure-panes/save-load';
 import * as RotaryEncoder from './configure-panes/custom/satisfaction75';
 import {makeCustomMenus} from './configure-panes/custom/menu-generator';
-import {LayerControl} from './configure-panes/layer-control';
-import {Badge} from './configure-panes/badge';
-import GlowButton from '../toffee_studio/GlowButton/GlowButton';
-import GlowCircularLoader from '../toffee_studio/GlowCircularLoader/GlowCircularLoader';
 import GlowTooltip from '../toffee_studio/GlowTooltip/GlowTooltip';
-import {useAppSelector, useAppDispatch} from 'src/store/hooks';
+import {useAppSelector} from 'src/store/hooks';
 import {getSelectedDefinition} from 'src/store/definitionsSlice';
 import {
   clearSelectedKey,
@@ -34,28 +27,48 @@ import {
   getNumberOfLayers,
   setConfigureKeyboardIsSelectable,
 } from 'src/store/keymapSlice';
-import {reloadConnectedDevices} from 'src/store/devicesThunks';
+import {useDispatch} from 'react-redux';
 import {getV3MenuComponents} from 'src/store/menusSlice';
 import {getIsMacroFeatureSupported} from 'src/store/macrosSlice';
-import {getConnectedDevices, getSupportedIds, setForceAuthorize} from 'src/store/devicesSlice';
-import {isElectron} from 'src/utils/running-context';
-import {MenuTooltip} from '../inputs/tooltip';
-import {getRenderMode, getSelectedTheme} from 'src/store/settingsSlice';
+import {useAppDispatch} from 'src/store/hooks';
+import { GlowingMenu } from '../toffee_studio/GlowingMenu/GlowingMenu';
 
-const defaultGlowColors = [
-  '#7b4dff', // 0: buttonShineLeft (Purple)
-  '#00e5ff', // 1: buttonShineRight (Cyan)
-  '#7b4dff', // 2: buttonGlowStart (Purple)
-  '#00e5ff', // 3: buttonGlowEnd (Cyan)
-  '#00c6ff', // 4: Border gradient / Glow Container bottom glow (Bright Blue)
-  '#1a1d2e', // 5: Glow Container background (Dark Blue/Purple)
-  '#2c2f48', // 6: buttonBackground (Slightly Lighter Dark Blue/Purple)
-  '#0f101c', // 7: buttonShadow (Very Dark Blue/Purple)
-];
+// --- STYLED COMPONENTS MOVED OUTSIDE ---
 
-const MenuContainer = styled.div`
-  padding: 15px 10px 20px 10px;
+const HorizontalMenuContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 0;
+  background: transparent;
+  pointer-events: all;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
 `;
+
+const fadeSlideIn = keyframes`
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+// We extend Grid here to preserve the "display: grid" context for children
+// like SubmenuCell and OverflowCell, while applying the animation to the container.
+const PaneAnimationGrid = styled(Grid)`
+  grid-template-columns: min-content minmax(0, 1fr);
+  height: 100%;
+  width: 100%;
+  animation: ${fadeSlideIn} 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+`;
+
+// ---------------------------------------
 
 const Rows = [
   Keycode,
@@ -74,6 +87,31 @@ function getCustomPanes(customFeatures: CustomFeaturesV2[]) {
   }
   return [];
 }
+
+const getRowsForKeyboard = (): typeof Rows => {
+  const showMacros = useAppSelector(getIsMacroFeatureSupported);
+  const v3Menus = useAppSelector(getV3MenuComponents);
+  const selectedDefinition = useAppSelector(getSelectedDefinition);
+  const numberOfLayers = useAppSelector(getNumberOfLayers);
+
+  if (!selectedDefinition) {
+    return [];
+  } else if (isVIADefinitionV2(selectedDefinition)) {
+    return getRowsForKeyboardV2(selectedDefinition, showMacros, numberOfLayers);
+  } else if (isVIADefinitionV3(selectedDefinition)) {
+    return [
+      ...filterInferredRows(selectedDefinition, showMacros, numberOfLayers, [
+        Keycode,
+        Layouts,
+        Macros,
+        SaveLoad,
+      ]),
+      ...v3Menus,
+    ];
+  } else {
+    return [];
+  }
+};
 
 const filterInferredRows = (
   selectedDefinition: VIADefinitionV3 | VIADefinitionV2,
@@ -127,107 +165,16 @@ const getRowsForKeyboardV2 = (
   );
 };
 
-const getRowsForKeyboard = (): typeof Rows => {
-  const showMacros = useAppSelector(getIsMacroFeatureSupported);
-  const v3Menus = useAppSelector(getV3MenuComponents);
-  const selectedDefinition = useAppSelector(getSelectedDefinition);
-  const numberOfLayers = useAppSelector(getNumberOfLayers);
-
-  if (!selectedDefinition) {
-    return [];
-  } else if (isVIADefinitionV2(selectedDefinition)) {
-    return getRowsForKeyboardV2(selectedDefinition, showMacros, numberOfLayers);
-  } else if (isVIADefinitionV3(selectedDefinition)) {
-    return [
-      ...filterInferredRows(selectedDefinition, showMacros, numberOfLayers, [
-        Keycode,
-        Layouts,
-        Macros,
-        SaveLoad,
-      ]),
-      ...v3Menus,
-    ];
-  } else {
-    return [];
-  }
-};
-
-const Loader: React.FC<{
-  loadProgress: number;
-  selectedDefinition: VIADefinitionV2 | VIADefinitionV3 | null;
-}> = (props) => {
-  const {loadProgress, selectedDefinition} = props;
-  const dispatch = useAppDispatch();
-  const theme = useAppSelector(getSelectedTheme);
-
-  const connectedDevices = useAppSelector(getConnectedDevices);
-  const supportedIds = useAppSelector(getSupportedIds);
-  const noSupportedIds = !Object.values(supportedIds).length;
-  const noConnectedDevices = !Object.values(connectedDevices).length;
-  const [showButton, setShowButton] = useState<boolean>(false);
-
-  useEffect(() => {
-    // TODO: Remove the timeout because it is funky
-    const timeout = setTimeout(() => {
-      if (!selectedDefinition) {
-        setShowButton(true);
-      }
-    }, 3000);
-    return () => clearTimeout(timeout);
-  }, [selectedDefinition]);
-  return (
-    <LoaderPane>
-      {(showButton || noConnectedDevices) && !noSupportedIds && !isElectron ? (
-        <>
-          <GlowCircularLoader size='120px' thickness='2px' sx={{ marginBottom: '20px' }} />
-          <GlowButton
-            onClick={() => {
-              dispatch(setForceAuthorize(true));
-              dispatch(reloadConnectedDevices());
-            }}
-            colors={defaultGlowColors}
-            sx={{ fontSize: '1rem', minWidth: '180px' }}
-          >
-            Connect Keyboard
-            <FontAwesomeIcon style={{ marginLeft: '10px' }} icon={faPlus} />
-          </GlowButton>
-          <div style={{ height: "60px" }}/>
-        </>
-       ) : (
-         <LoadingText isSearching={!selectedDefinition} />
-       )}
-
-    </LoaderPane>
-  );
-};
-
-const LoaderPane = styled(CenterPane)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  row-gap: 50px;
-  position: absolute;
-  bottom: 50px;
-  top: 100px;
-  left: 0;
-  right: 0;
-  z-index: 4;
-`;
-
 export const ConfigurePane = () => {
   const selectedDefinition = useAppSelector(getSelectedDefinition);
   const loadProgress = useAppSelector(getLoadProgress);
-  const renderMode = useAppSelector(getRenderMode);
 
   const showLoader = !selectedDefinition || loadProgress !== 1;
-  return showLoader ? (
-    renderMode === '2D' ? (
-      <Loader
-        selectedDefinition={selectedDefinition || null}
-        loadProgress={loadProgress}
-      />
-    ) : null
-  ) : (
+  if (showLoader) {
+    return null; // The global loader overlay will be visible
+  }
+
+  return (
     <ConfigureBasePane>
       <ConfigureGrid />
     </ConfigureBasePane>
@@ -248,50 +195,39 @@ const ConfigureGrid = () => {
     } else {
       dispatch(setConfigureKeyboardIsSelectable(true));
     }
-  }, [selectedTitle]);
+  }, [selectedTitle, dispatch]);
+
+  // Memoize menu items to prevent array reference changes on re-renders
+  const menuItems = useMemo(() => 
+    (KeyboardRows || []).map((row) => (row.Title as string) || 'Unknown'),
+  [KeyboardRows]);
 
   return (
     <>
-      <ConfigureFlexCell
-        onClick={(evt) => {
-          if ((evt.target as any).nodeName !== 'CANVAS')
-            dispatch(clearSelectedKey());
-        }}
-        style={{
-          pointerEvents: 'none',
-          position: 'absolute',
-          top: 50,
-          left: 0,
-          right: 0,
-        }}
-      >
-        <div style={{pointerEvents: 'all'}}>
-          <LayerControl />
-          <Badge />
-        </div>
-      </ConfigureFlexCell>
-      <Grid style={{pointerEvents: 'none'}}>
-        <MenuCell style={{pointerEvents: 'all'}}>
-          <MenuContainer>
-            {(KeyboardRows || []).map(
-              ({Icon, Title}: {Icon: any; Title: string}, idx: number) => (
-                <Row
-                  key={idx}
-                  onClick={(_) => setRow(idx)}
-                  $selected={selectedRow === idx}
-                >
-                  <IconContainer>
-                    <Icon />
-                    <MenuTooltip>{Title}</MenuTooltip>
-                  </IconContainer>
-                </Row>
-              ),
-            )}
-          </MenuContainer>
-        </MenuCell>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%', pointerEvents: 'none' }}>
+        <HorizontalMenuContainer>
+          <GlowingMenu 
+            items={menuItems} 
+            selectedIndex={selectedRow}
+            onChange={(idx) => setRow(idx)} 
+          />
+        </HorizontalMenuContainer>
 
-        {SelectedPane && <SelectedPane />}
-      </Grid>
+        <div style={{ flex: 1, overflow: 'auto', pointerEvents: 'all', position: 'relative' }}>
+          {SelectedPane && (
+            <PaneAnimationWrapper key={selectedRow}>
+              <SelectedPane />
+            </PaneAnimationWrapper>
+          )}
+        </div>
+      </div>
     </>
   );
 };
+
+// Re-using the animation wrapper from design.tsx/others for consistent transition
+const PaneAnimationWrapper = styled.div`
+  height: 100%;
+  width: 100%;
+  animation: ${fadeSlideIn} 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+`;

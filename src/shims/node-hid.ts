@@ -125,17 +125,23 @@ const ExtendedHID = {
     setupListeners() {
       if (this._hidDevice) {
         this._hidDevice._device.addEventListener('inputreport', (e) => {
+          const message = new Uint8Array(e.data.buffer, e.data.byteOffset, e.data.byteLength);
+          // The Module's custom lighting reader owns these correlated replies.
+          // Never satisfy a pending VIA request or buffer them as VIA traffic.
+          if (this.vendorId === 0x1067 && this.productId === 0x626d && message.length === 32 &&
+              (message[0] === 0 || message[0] === 0xef) && message[26] === 0xa5 &&
+              message[27] >= 0x50 && message[27] <= 0x8c) return;
           if (eventWaitBuffer[this.path].length !== 0) {
             // It should be impossible to have a handler in the buffer
             // that has a ts that happened after the current message
             // came in
             (eventWaitBuffer[this.path].shift() as any)(
-              new Uint8Array(e.data.buffer),
+              message,
             );
           } else {
             globalBuffer[this.path].push({
               currTime: Date.now(),
-              message: new Uint8Array(e.data.buffer),
+              message,
             });
           }
         });
@@ -143,7 +149,6 @@ const ExtendedHID = {
     }
 
     read(fn: (err?: Error, data?: ArrayBuffer) => void) {
-      this.fastForwardGlobalBuffer(Date.now());
       if (globalBuffer[this.path].length > 0) {
         // this should be a noop normally
         fn(undefined, globalBuffer[this.path].shift()?.message as any);
@@ -172,6 +177,9 @@ const ExtendedHID = {
     async write(arr: number[]) {
       await this.openPromise;
       const data = new Uint8Array(arr.slice(1));
+      // A reply may arrive before sendReport resolves. Purge before dispatch,
+      // not when read() is eventually called after awaiting the write.
+      this.fastForwardGlobalBuffer(Date.now());
       await this._hidDevice?._device.sendReport(0, data);
     }
   },

@@ -1,5 +1,5 @@
-import {Buffer} from 'buffer';
 import {ToffeeCDC} from './cdc';
+import lightingMap from './lighting-map.json';
 
 /**
  * Command IDs for the custom module filesystem protocol.
@@ -28,6 +28,14 @@ export enum CommandID {
   MODULE_CMD_SET_BRIGHTNESS = 0x74,
   MODULE_CMD_SET_COLOR_HS = 0x75,
   MODULE_CMD_GET_LIGHTING_STATE = 0x76,
+  MODULE_CMD_SET_LED_BRIGHTNESS = 0x7b,
+  MODULE_CMD_FRONT_GET = 0x80,
+  MODULE_CMD_FRONT_SET = 0x81,
+  MODULE_CMD_BADGE_GET = 0x82,
+  MODULE_CMD_BADGE_SET = 0x83,
+  MODULE_CMD_LED_GET = 0x84,
+  MODULE_CMD_CAPABILITIES = 0x85,
+  MODULE_CMD_POWER_STATUS = 0x88,
 }
 
 /**
@@ -57,116 +65,81 @@ const DATA_SIZE = PACKET_SIZE - HEADER_SIZE;
  * A low-level class to handle raw HID packet communication with the custom device.
  * Assumes it's initialized with a pre-authorized HIDDevice object from VIA.
  */
+type HIDSession = {queue: Promise<void>; packetId: number};
+const sessions = new WeakMap<HIDDevice, HIDSession>();
+
 export class ToffeeHIDDevice {
-  private packetId: number = 0;
-
+  private session: HIDSession;
   constructor(private webHidDevice: HIDDevice) {
-    if (!webHidDevice) {
-      throw new Error('ToffeeHIDDevice requires a valid HIDDevice object.');
+    if (!webHidDevice) throw new Error('ToffeeHIDDevice requires a valid HIDDevice object.');
+    let session = sessions.get(webHidDevice);
+    if (!session) {
+      session = {queue: Promise.resolve(), packetId: 0};
+      sessions.set(webHidDevice, session);
     }
+    this.session = session;
   }
-
-  /**
-   * Ensures the device connection is open before communication.
-   * This should be called before any send/receive operations.
-   */
   public async open(): Promise<void> {
-    if (!this.webHidDevice.opened) {
-      await this.webHidDevice.open();
-    }
+    if (!this.webHidDevice.opened) await this.webHidDevice.open();
   }
-
-  /**
-   * Closes the device connection.
-   */
   public async close(): Promise<void> {
-    if (this.webHidDevice.opened) {
-      await this.webHidDevice.close();
-    }
+    await this.session.queue;
+    if (this.webHidDevice.opened) await this.webHidDevice.close();
   }
-
-  /**
-   * Sends a structured packet to the device.
-   */
-  private async sendPacket(
-    commandId: CommandID,
-    data: Uint8Array = new Uint8Array(),
-  ): Promise<void> {
-    const buffer = new ArrayBuffer(PACKET_SIZE);
-    const view = new DataView(buffer);
-    const packet = new Uint8Array(buffer);
-
-    // Build header
+  private enqueue<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.session.queue.then(operation);
+    this.session.queue = result.then(() => {}, () => {});
+    return result;
+  }
+  private async sendPacket(commandId: CommandID, data: Uint8Array, packetId: number): Promise<void> {
+    if (data.length > DATA_SIZE) throw new Error('HID payload exceeds 26 bytes.');
+    const packet = new Uint8Array(PACKET_SIZE);
+    const view = new DataView(packet.buffer);
     view.setUint8(0, MAGIC_BYTE);
     view.setUint8(1, commandId);
-    view.setUint32(2, this.packetId, true); // true for little-endian
-
-    // Copy data payload
+    view.setUint32(2, packetId, true);
     packet.set(data, HEADER_SIZE);
-
-    console.log(
-      `Sending packet ${this.packetId} (CMD: 0x${commandId.toString(
-        16,
-      )}):`,
-      Buffer.from(packet).toString('hex'),
-    );
+    console.log(`HID send #${packetId} command 0x${commandId.toString(16)}.`);
     await this.webHidDevice.sendReport(0, packet);
-    this.packetId++;
   }
-
-  /**
-   * Waits for and receives a single packet from the device.
-   */
-  private receivePacket(timeoutMs: number = 1500): Promise<Uint8Array> {
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        // Cleanup listener before rejecting
-        this.webHidDevice.removeEventListener('inputreport', listener);
-        reject(new Error(`HID read timed out after ${timeoutMs}ms.`));
-      }, timeoutMs);
-
-      const listener = (event: HIDInputReportEvent) => {
-        // Ensure the report is from the correct device and is not empty
-        if (event.device === this.webHidDevice && event.data.byteLength > 0) {
-          clearTimeout(timeout);
-          this.webHidDevice.removeEventListener('inputreport', listener);
-          const responseData = new Uint8Array(event.data.buffer);
-          console.log(
-            'Received response:',
-            Buffer.from(responseData).toString('hex'),
-          );
-          resolve(responseData);
+  private async exchangeCommand(commandId: CommandID, data: Uint8Array): Promise<[ReturnCode, Uint8Array]> {
+    await this.open();
+    const packetId = this.session.packetId++ >>> 0;
+    let listener!: (event: HIDInputReportEvent) => void;
+    let timeout!: ReturnType<typeof setTimeout>;
+    const response = new Promise<Uint8Array>((resolve, reject) => {
+      listener = (event) => {
+        if (event.device !== this.webHidDevice) return;
+        if (event.data.byteLength !== PACKET_SIZE) {
+          reject(new Error('Board returned an incomplete HID report.'));
+          return;
         }
+        const packet = new Uint8Array(event.data.buffer, event.data.byteOffset, event.data.byteLength);
+        // Standard VIA replies, stale replies and another command must not satisfy this request.
+        if (packet[26] !== 0xa5 || packet[27] !== commandId ||
+            event.data.getUint32(28, true) !== packetId) return;
+        resolve(packet.slice());
       };
-
+      timeout = setTimeout(() => reject(new Error('HID read timed out after 1500ms; check connection and firmware version.')), 1500);
       this.webHidDevice.addEventListener('inputreport', listener);
     });
-  }
-  /**
-   * Sends a packet without waiting for a response. Useful for trigger commands.
-   */
-  public async sendPacketOnly(commandId: CommandID, data?: Uint8Array): Promise<void> {
-    // This is a public wrapper for the private sendPacket method
-    await this.sendPacket(commandId, data);
-  }
-
-  /**
-   * Executes a command by sending a packet and waiting for a response.
-   */
-  public async executeCommand(
-    commandId: CommandID,
-    data?: Uint8Array,
-  ): Promise<[ReturnCode, Uint8Array]> {
-    await this.sendPacket(commandId, data);
     try {
-      const response = await this.receivePacket();
-      const status = response[0] as ReturnCode;
-      const responseData = response.slice(1);
-      return [status, responseData];
-    } catch (e) {
-      console.error(`Error executing command 0x${commandId.toString(16)}:`, e);
-      return [ReturnCode.INVALID_COMMAND, new Uint8Array()];
+      const [, packet] = await Promise.all([this.sendPacket(commandId, data, packetId), response]);
+      console.log(`HID reply #${packetId} status 0x${packet[0].toString(16)}.`);
+      return [packet[0] as ReturnCode, packet.slice(1, 26)];
+    } finally {
+      clearTimeout(timeout);
+      this.webHidDevice.removeEventListener('inputreport', listener);
     }
+  }
+  public sendPacketOnly(commandId: CommandID, data = new Uint8Array()): Promise<void> {
+    return this.enqueue(async () => {
+      await this.open();
+      await this.sendPacket(commandId, data, this.session.packetId++ >>> 0);
+    });
+  }
+  public executeCommand(commandId: CommandID, data = new Uint8Array()): Promise<[ReturnCode, Uint8Array]> {
+    return this.enqueue(() => this.exchangeCommand(commandId, data));
   }
 }
 
@@ -252,21 +225,80 @@ export class ToffeeFileSystemAPI {
   }
 }
 
-
 /**
  * A class to interact with the device's lighting system via the ToffeeHIDDevice.
  */
+export type LightingState = {effect: number; speed: number; brightness: number; hue: number; saturation: number};
+export type BadgeState = {enabled: boolean; brightness: number; hue: number; saturation: number};
+export type PowerStatus = {
+  frontBadgeMax: number | null; // v2 firmware output rescaling; v1 does not report it.
+  manualMeasurement: boolean;
+  currentUnlimited: boolean;
+  configured: boolean; limited: boolean; usbConfigured: boolean; startupActive: boolean; frameValid: boolean;
+  modelRevision: number; frame: number; ageMs: number; boardLimitMa: number; baseMa: number; marginMa: number;
+  requestedLedMa: number; effectiveLedMa: number; limitPermille: number; startupPermille: number; ledBudgetMa: number;
+};
+const frontIndices = new Set(lightingMap.front.map(key => key.index));
+function byte(value: number, name: string, maximum = 255): number {
+  if (!Number.isInteger(value) || value < 0 || value > maximum)
+    throw new Error(`${name} must be an integer from 0 to ${maximum}.`);
+  return value;
+}
+function frontIndex(index: number): number {
+  if (!frontIndices.has(index)) throw new Error('LED index must identify a regular front key.');
+  return index;
+}
+
 export class ToffeeLightingAPI {
   constructor(private hid: ToffeeHIDDevice) {}
+
+  public async getPowerStatus(): Promise<PowerStatus> {
+    const [status, data] = await this.hid.executeCommand(CommandID.MODULE_CMD_POWER_STATUS);
+    if (status === ReturnCode.INVALID_COMMAND)
+      throw new Error('Debug current telemetry is unavailable in this firmware. A budget-enabled firmware update is required.');
+    if (status !== ReturnCode.SUCCESS)
+      throw new Error(`Board rejected current telemetry (status 0x${status.toString(16)}).`);
+    if (data.length !== 25 || ![1, 2].includes(data[0]) || (data[1] & ~127) ||
+        (data[0] === 1 && (data[24] !== 0 || (data[1] & 64))) || (data[0] === 2 && (data[1] & 32)))
+      throw new Error('Unsupported or malformed current telemetry.');
+    const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+    const value: PowerStatus = {
+      frontBadgeMax: data[0] === 2 ? data[24] : null,
+      manualMeasurement: Boolean(data[1] & 32),
+      currentUnlimited: Boolean(data[1] & 64),
+      configured: Boolean(data[1] & 1), limited: Boolean(data[1] & 2), usbConfigured: Boolean(data[1] & 4),
+      startupActive: Boolean(data[1] & 8), frameValid: Boolean(data[1] & 16),
+      modelRevision: view.getUint16(2, true), frame: view.getUint16(4, true), ageMs: view.getUint16(6, true),
+      boardLimitMa: view.getUint16(8, true), baseMa: view.getUint16(10, true), marginMa: view.getUint16(12, true),
+      requestedLedMa: view.getUint16(14, true), effectiveLedMa: view.getUint16(16, true),
+      limitPermille: view.getUint16(18, true), startupPermille: view.getUint16(20, true), ledBudgetMa: view.getUint16(22, true),
+    };
+    const budget = value.configured ? Math.max(0, value.boardLimitMa - value.baseMa - value.marginMa) : 0;
+    if (value.limitPermille > 1000 || value.startupPermille > 1000 || value.ledBudgetMa !== budget ||
+        (!value.manualMeasurement && !value.currentUnlimited && value.effectiveLedMa > budget) || value.effectiveLedMa > value.requestedLedMa ||
+        (value.currentUnlimited && (value.modelRevision !== 10 || value.frontBadgeMax !== 200 || value.limited || value.limitPermille !== 1000)) ||
+        (value.manualMeasurement && (!value.configured || value.modelRevision < 0x8000 || value.limited || value.limitPermille !== 1000)))
+      throw new Error('Inconsistent current telemetry; no budget reading accepted.');
+    return value;
+  }
+
+  private async command(commandId: CommandID, payload: Uint8Array): Promise<Uint8Array> {
+    const [status, response] = await this.hid.executeCommand(commandId, payload);
+    if (status !== ReturnCode.SUCCESS) {
+      throw new Error(
+        `Board firmware rejected lighting command 0x${commandId.toString(16)} (status 0x${status.toString(16)}).`,
+      );
+    }
+    return response;
+  }
 
   /**
    * Sets the lighting animation effect.
    * @param effectId The ID of the animation (0-9).
    */
   public async setAnimation(effectId: number): Promise<void> {
-    const payload = new Uint8Array([effectId]);
-    // Changed to executeCommand to wait for a response, creating a natural delay.
-    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_ANIMATION, payload);
+    const payload = new Uint8Array([byte(effectId, 'Underglow effect', 9)]);
+    await this.command(CommandID.MODULE_CMD_SET_ANIMATION, payload);
   }
 
   /**
@@ -274,9 +306,8 @@ export class ToffeeLightingAPI {
    * @param speed The speed value (0-255).
    */
   public async setSpeed(speed: number): Promise<void> {
-    const payload = new Uint8Array([speed]);
-    // Changed to executeCommand to wait for a response.
-    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_SPEED, payload);
+    const payload = new Uint8Array([byte(speed, 'Speed')]);
+    await this.command(CommandID.MODULE_CMD_SET_SPEED, payload);
   }
 
   /**
@@ -284,9 +315,50 @@ export class ToffeeLightingAPI {
    * @param brightness The brightness value (0-255).
    */
   public async setBrightness(brightness: number): Promise<void> {
-    const payload = new Uint8Array([brightness]);
-    // Changed to executeCommand to wait for a response.
-    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_BRIGHTNESS, payload);
+    const payload = new Uint8Array([byte(brightness, 'Brightness')]);
+    await this.command(CommandID.MODULE_CMD_SET_BRIGHTNESS, payload);
+  }
+
+  /**
+   * Sets the brightness of a single LED, on top of the global brightness.
+   * @param ledIndex The LED index (0-based).
+   * @param brightness 255 = full, 0 = off.
+   */
+  public async setLedBrightness(ledIndex: number, brightness: number): Promise<void> {
+    const payload = new Uint8Array([frontIndex(ledIndex), byte(brightness, 'Brightness')]);
+    await this.command(CommandID.MODULE_CMD_SET_LED_BRIGHTNESS, payload);
+  }
+
+  public async getCapabilities(): Promise<void> {
+    const data = await this.command(CommandID.MODULE_CMD_CAPABILITIES, new Uint8Array());
+    if (data[0] !== 2 || data[1] !== 66 || data[2] !== 22 || data[3] !== 16 || data[4] !== 104 || data[5] !== 9) {
+      throw new Error('This menu requires the latest screenless Module lighting firmware.');
+    }
+  }
+  public async getFrontState(): Promise<LightingState> {
+    const data = await this.command(CommandID.MODULE_CMD_FRONT_GET, new Uint8Array());
+    if (data[0] >= 9) throw new Error('Invalid front lighting effect.');
+    return {effect: data[0], speed: data[1], brightness: data[2], hue: data[3], saturation: data[4]};
+  }
+  public async setFrontState(state: LightingState): Promise<void> {
+    await this.command(CommandID.MODULE_CMD_FRONT_SET,
+      new Uint8Array([byte(state.effect, 'Front effect', 8), byte(state.speed, 'Speed'),
+        byte(state.brightness, 'Brightness'), byte(state.hue, 'Hue'), byte(state.saturation, 'Saturation')]));
+  }
+  public async getBadgeState(): Promise<BadgeState> {
+    const data = await this.command(CommandID.MODULE_CMD_BADGE_GET, new Uint8Array());
+    if (data[0] > 1) throw new Error('Invalid badge lighting state.');
+    return {enabled: data[0] === 1, brightness: data[1], hue: data[2], saturation: data[3]};
+  }
+  public async setBadgeState(state: BadgeState): Promise<void> {
+    await this.command(CommandID.MODULE_CMD_BADGE_SET,
+      new Uint8Array([Number(state.enabled), byte(state.brightness, 'Brightness'),
+        byte(state.hue, 'Hue'), byte(state.saturation, 'Saturation')]));
+  }
+  public async getLedBrightness(index: number): Promise<number> {
+    const data = await this.command(CommandID.MODULE_CMD_LED_GET, new Uint8Array([frontIndex(index)]));
+    if (data[0] !== index) throw new Error('Board returned the wrong LED state.');
+    return data[1];
   }
 
   /**
@@ -295,20 +367,16 @@ export class ToffeeLightingAPI {
    * @param saturation The saturation value (0-255).
    */
   public async setColor(hue: number, saturation: number): Promise<void> {
-    const payload = new Uint8Array([hue, saturation]);
-    // Changed to executeCommand to wait for a response.
-    await this.hid.executeCommand(CommandID.MODULE_CMD_SET_COLOR_HS, payload);
+    const payload = new Uint8Array([byte(hue, 'Hue'), byte(saturation, 'Saturation')]);
+    await this.command(CommandID.MODULE_CMD_SET_COLOR_HS, payload);
   }
   /**
    * Gets the entire current lighting state from the device.
    * @returns A promise that resolves to an object with the lighting state.
    */
   public async getLightingState(): Promise<{ effect: number; speed: number; brightness: number; hue: number; saturation: number; }> {
-    const [status, responseData] = await this.hid.executeCommand(CommandID.MODULE_CMD_GET_LIGHTING_STATE);
-    console.log(`[ToffeeLightingAPI] Raw Response for GET_LIGHTING_STATE - Status: 0x${status.toString(16)}, Data:`, responseData);
-    if (status !== ReturnCode.SUCCESS || responseData.length < 5) {
-      throw new Error(`Failed to get lighting state. Status: ${status}`);
-    }
+    const responseData = await this.command(CommandID.MODULE_CMD_GET_LIGHTING_STATE, new Uint8Array());
+    if (responseData[0] > 9) throw new Error('Invalid underglow effect.');
     // Response payload is: [effect, speed, brightness, hue, sat]
     return {
       effect: responseData[0],

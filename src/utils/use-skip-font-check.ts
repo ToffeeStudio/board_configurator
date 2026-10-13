@@ -9,7 +9,7 @@ export function useSkipFontCheck() {
     setShouldSkipFontCheck(true);
   }, []);
   useEffect(() => {
-    document.fonts.load('Fira Sans').then(allowFontCheck, skipFontCheck);
+    document.fonts.load('16px Montserrat').then(allowFontCheck, skipFontCheck);
   }, []);
   return shouldSkipFontCheck;
 }

@@ -65,7 +65,6 @@ export class ToffeeCDC {
     }
   }
 
-
   /**
    * Sends a file to the device using the (filename, size, data) protocol.
    * It acquires a writer, sends the data, and releases the writer.
@@ -75,7 +74,7 @@ export class ToffeeCDC {
       throw new Error('CDC port is not connected or not writable.');
     }
 
-    const writer = this.port.writable.getWriter();
+    const writer = this.port.writable.getWriter(); // Lock is acquired here
     try {
       console.log(`--- Starting file transfer for ${filename} ---`);
 
@@ -84,35 +83,44 @@ export class ToffeeCDC {
       const filenameBytes = textEncoder.encode(filename);
       const nullTerminatedFilename = new Uint8Array(filenameBytes.length + 1);
       nullTerminatedFilename.set(filenameBytes, 0);
-      nullTerminatedFilename[filenameBytes.length] = 0;
+      nullTerminatedFilename[filenameBytes.length] = 0; // Null terminator
 
-      console.log(`Sending filename: ${filename} (${nullTerminatedFilename.byteLength} bytes)`);
+      console.log(
+        `Sending filename: ${filename} (${nullTerminatedFilename.byteLength} bytes)`,
+      );
+      console.log('RAW HEX (Filename + Null):', Buffer.from(nullTerminatedFilename).toString('hex'));
+
       await writer.write(nullTerminatedFilename);
-      await new Promise((resolve) => setTimeout(resolve, 100)); // Crucial delay for firmware
+
+      // A small delay can help the firmware process the filename before the size arrives
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // 2. Send Size (4 bytes, Little Endian)
       const size = data.byteLength;
       const sizeBuffer = new ArrayBuffer(4);
       const sizeView = new DataView(sizeBuffer);
-      sizeView.setUint32(0, size, true); // true for little-endian
+      sizeView.setUint32(0, size, true); // `true` for little-endian
 
       console.log(`Sending size: ${size} bytes`);
-      await writer.write(new Uint8Array(sizeBuffer));
-      await new Promise((resolve) => setTimeout(resolve, 100)); // Crucial delay for firmware
+      console.log('RAW HEX (Size, 4 bytes LE):', Buffer.from(new Uint8Array(sizeBuffer)).toString('hex'));
 
-      // 3. Send Actual Data in Chunks
-      console.log(`Sending data block (${data.length} bytes)...`);
-      const CHUNK_SIZE = 4096; // Same as working Python script
-      for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-        const chunk = data.subarray(i, i + CHUNK_SIZE);
-        await writer.write(chunk);
-      }
+      await writer.write(new Uint8Array(sizeBuffer));
+
+      // Another small delay
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 3. Send Actual Data
+      console.log('Sending data block...');
+      console.log('RAW HEX (Data payload):', Buffer.from(data).toString('hex'));
+      await writer.write(data);
       console.log('--- File transfer complete ---');
     } catch (error) {
       console.error('Error during file send:', error);
-      await writer.abort().catch(() => {});
-      throw error;
+      // Abort the writer if an error occurs to prevent further issues
+      await writer.abort();
+      throw error; // Re-throw to be caught by the UI
     } finally {
+      // CRITICAL: Always release the lock when done.
       writer.releaseLock();
     }
   }
@@ -162,6 +170,8 @@ export class ToffeeCDC {
             break;
           }
 
+          console.log('RAW HEX (Received Filename Bytes):', Buffer.from(filenameBytes).toString('hex'));
+
           const filename = new TextDecoder().decode(filenameBytes);
           console.log(`[OK] Received Filename: '${filename}'`);
     
@@ -176,6 +186,8 @@ export class ToffeeCDC {
           }
 
           const sizeBytes = streamBuffer.slice(0, 4);
+          console.log('RAW HEX (Received Size Bytes):', Buffer.from(sizeBytes).toString('hex'));
+
           const expectedSize = new DataView(sizeBytes.buffer, sizeBytes.byteOffset, sizeBytes.byteLength).getUint32(0, true);
           streamBuffer = streamBuffer.slice(4);
           console.log(`[OK] Expecting Size: ${expectedSize} bytes. Leftover data in buffer: ${streamBuffer.length} bytes.`);
@@ -193,6 +205,7 @@ export class ToffeeCDC {
           const fileData = streamBuffer.slice(0, expectedSize);
           streamBuffer = streamBuffer.slice(expectedSize);
           
+          console.log('RAW HEX (Received Data Payload):', Buffer.from(fileData).toString('hex'));
           console.log(`[OK] -> Received ${fileData.byteLength} bytes for '${filename}'.`);
           receivedFiles.push({ filename, data: fileData });
 
@@ -218,3 +231,5 @@ export class ToffeeCDC {
     return receivedFiles;
   }
 }
+
+export const cdcInstance = new ToffeeCDC();

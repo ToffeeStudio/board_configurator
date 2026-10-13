@@ -14,13 +14,23 @@ import {
   updateDefinitions,
   getDefinitions,
   loadStoredCustomDefinitions,
+  loadCustomDefinitions,
+  storeCustomDefinitions,
 } from './definitionsSlice';
+import {
+  isVIADefinitionV3,
+  isKeyboardDefinitionV3,
+  keyboardDefinitionV3ToVIADefinitionV3,
+  type VIADefinitionV3,
+} from '@the-via/reader';
+import draftDefinition from '../draft_definition.json';
 import {loadKeymapFromDevice} from './keymapSlice';
 import {updateLightingData} from './lightingSlice';
 import {loadMacros} from './macrosSlice';
 import {updateV3MenuData} from './menusSlice';
 import {
   clearAllDevices,
+  ensureSupportedIds,
   getConnectedDevices,
   getForceAuthorize,
   getSelectedDevicePath,
@@ -256,11 +266,26 @@ export const reloadConnectedDevices =
     }
   };
 
-export const loadSupportedIds = (): AppThunk => async (dispatch) => {
+export const loadSupportedIds = (): AppThunk<Promise<void>> => async (dispatch) => {
   await syncStore();
   dispatch(updateSupportedIds(getSupportedIdsFromStore()));
-  // John you drongo, don't trust the compiler, dispatches are totes awaitable for async thunks
-  await dispatch(updateDefinitions(getDefinitionsFromStore()));
-  dispatch(loadStoredCustomDefinitions());
-  dispatch(reloadConnectedDevices());
+  dispatch(updateDefinitions(getDefinitionsFromStore()));
+  await dispatch(loadStoredCustomDefinitions());
+
+  // One startup owner: neither catalog refresh nor IndexedDB hydration may
+  // replace Module support after device scanning has already started.
+  let definition: VIADefinitionV3;
+  if (isVIADefinitionV3(draftDefinition)) {
+    definition = draftDefinition;
+  } else if (isKeyboardDefinitionV3(draftDefinition)) {
+    definition = keyboardDefinitionV3ToVIADefinitionV3(draftDefinition);
+  } else {
+    throw new Error('Bundled Module definition must be a valid V3 definition.');
+  }
+  const customDefinitions = {definitions: [definition], version: 'v3' as const};
+  dispatch(loadCustomDefinitions(customDefinitions));
+  dispatch(ensureSupportedIds({productIds: [definition.vendorProductId], version: 'v3'}));
+  await dispatch(storeCustomDefinitions(customDefinitions));
+  console.info('Keyboard definitions ready; scanning authorised devices.');
+  await dispatch(reloadConnectedDevices());
 };
