@@ -6,11 +6,14 @@ The lighting work and regression tools are now committed locally on `lighting-fi
 The authorised release keeps `DEBUG_ENABLED=true` and will merge into `main`.
 Local `main` has earlier divergent commits; preserve them with a normal merge,
 not a reset, rebase or force-push. The merge and deployment are still pending.
-GitHub publication is currently blocked: HTTPS push returned403 for both this
-repository and the matching firmware source; the authenticated account
-`ethanhaan` has read-only access. SSH authenticates as the same account.
-No push or Render deployment has completed. Authenticate an account with write
-access to both ToffeeStudio repositories before retrying; do not force-push.
+GitHub authentication is now configured locally for this checkout as
+`ToffeeStudio`, with credentials stored in macOS Keychain. The isolated GitHub
+CLI configuration is under `.git/toffee-gh`; the repository-local HTTPS helper
+uses it without changing the global `ethanhaan` account or other checkouts.
+Write access to both ToffeeStudio repositories is verified. The earlier403
+failures were from `ethanhaan`'s read-only access, not lost commits.
+The merge preview has five content conflicts; resolving those and deployment
+remain pending. Do not force-push or claim Render deployment from authentication.
 
 ### 13 October release checkpoints
 
@@ -27,8 +30,9 @@ the Homebrew Python lacks the existing `hid` dependency. No hardware, camera,
 lighting commands or flashing occurred while preparing these commits.
 Private settings, browser observations and recovery images remain outside Git.
 Matching firmware checkpoints and build instructions are bundled in
-`firmware-downloads/README.txt`; publish `qmk_firmware/screenless-pcb` before
-distributing the UF2 downloads. A push to this repository's `main` triggers
+`firmware-downloads/README.txt`. Corresponding `qmk_firmware/screenless-pcb`
+source is now published through commit `3b891b475f7b91757645149b69fcdb42cd37ead5`,
+before publishing the configurator downloads. A push to this repository's `main` triggers
 `.github/workflows/trigger-deploy.yml` and its configured deploy hook; the
 workflow firing is not proof that Render finished deployment successfully.
 
