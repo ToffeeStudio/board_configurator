@@ -4,12 +4,14 @@ import path from 'path';
 import {splitVendorChunkPlugin} from 'vite';
 import {createHtmlPlugin} from 'vite-plugin-html';
 import fs from 'fs';
+import {debugFirmwareAssets} from './scripts/debug-firmware-assets';
 
 const hash = fs.readFileSync('public/definitions/hash.json', 'utf8');
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    debugFirmwareAssets(),
     react(),
     createHtmlPlugin({
       inject: {

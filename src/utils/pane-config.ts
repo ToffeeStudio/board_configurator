@@ -16,6 +16,9 @@ import {ToffeeTestPane} from '../components/panes/toffee-test';
 import {DisplayPane} from '../components/panes/display';
 import {ErrorsPaneConfig} from '../components/panes/errors';
 import {ToffeeLighting} from '../components/panes/toffee-lighting';
+import {ToffeeDebug} from '../components/panes/toffee-debug';
+import {DEBUG_ENABLED, MEASUREMENT_PATH, FIRMWARE_PATH} from '../config/debug';
+import {FirmwareUpdate} from '../components/panes/firmware-update';
 
 export default [
   {
@@ -67,12 +70,18 @@ export default [
     path: '/toffee-lighting',
     title: 'Lighting',
   },
-  {
+  ...(DEBUG_ENABLED ? [{
+    key: 'firmware-update', component: FirmwareUpdate, icon: faGear,
+    path: FIRMWARE_PATH, title: 'Firmware Update',
+  }, {
+    key: 'toffee-debug', component: ToffeeDebug, icon: faBug,
+    path: MEASUREMENT_PATH, title: 'Lighting Debug',
+  }, {
     key: 'toffee-test',
     component: ToffeeTestPane,
     icon: faDisplay,
     path: '/toffee-test',
     title: 'Toffee Test [DEPRECATED]',
-  },
+  }] : []),
   ErrorsPaneConfig,
 ];

@@ -11,6 +11,7 @@ import GlowContainer from '../toffee_studio/GlowContainer/GlowContainer';
 import GlowTooltip from '../toffee_studio/GlowTooltip/GlowTooltip';
 import {ErrorLink, ErrorsPaneConfig} from '../panes/errors';
 import {ExternalLinks} from './external-links';
+import {FIRMWARE_PATH} from '../../config/debug';
 
 const {DEBUG_PROD, MODE, DEV} = import.meta.env;
 const showDebugPane = MODE === 'development' || DEBUG_PROD === 'true' || DEV;
@@ -45,7 +46,7 @@ export const UnconnectedGlobalMenu = () => {
         return (
           <GlowButton
             key={pane.key}
-            onClick={() => navigate(pane.path)}
+            onClick={() => pane.path === FIRMWARE_PATH ? window.location.assign(pane.path) : navigate(pane.path)}
             forceOn={pane.path === location}
             sx={{ fontSize: "16px" }}
           >

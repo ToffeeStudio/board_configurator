@@ -1,0 +1,32 @@
+[
+  {
+    "id": "normal",
+    "name": "Normal · 940 mA",
+    "description": "Latest normal profile9. Estimated-current limiting, front/badge 200/255, saved lighting and 1s dark + 1s fade.",
+    "profile": 9,
+    "mode": "normal",
+    "testBuild": null,
+    "file": "normal.uf2",
+    "sha256": "78d05883df9de9fcee88d9c216aa744be6ef1d4a55eeffbf2504b500f61f282b"
+  },
+  {
+    "id": "manual",
+    "name": "Unlimited measurement test",
+    "description": "Build 0x26101002. Exact 0–255 output, no current limiter or timeout, starts dark, test lighting not saved. Uses the older informational estimator.",
+    "profile": 32774,
+    "mode": "manual",
+    "testBuild": 638586882,
+    "file": "manual.uf2",
+    "sha256": "d5c464123806a9b4c6dd9783a18bcb4809ad786192e773dad042268718d04f42"
+  },
+  {
+    "id": "current-unlimited",
+    "name": "Normal · no current limit",
+    "description": "Profile10. Normal saves and startup fade, front/badge 200/255 retained. Current estimate is informational only; saved high output returns after restart.",
+    "profile": 10,
+    "mode": "current-unlimited",
+    "testBuild": null,
+    "file": "current-unlimited.uf2",
+    "sha256": "900c0d67e20557ed904c88dec8fa98a064f9904f84ba912fa21b8fd1640d9d22"
+  }
+]
