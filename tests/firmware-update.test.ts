@@ -66,6 +66,11 @@ test('normal-unlimited reports actual uncapped estimate without claiming manual 
   device.profile = 9;
   await expect(new ToffeeLightingAPI(new ToffeeHIDDevice(device as unknown as HIDDevice)).getPowerStatus()).rejects.toThrow('Inconsistent');
 });
+test('old normal firmware cannot masquerade as the new animation build', async () => {
+  const device = new FirmwareFakeDevice(); device.lightingProtocol = 2;
+  await expect(connection(device).verify(manifest[0])).rejects.toThrow('lighting protocol');
+  expect(device.packets.some(p => [3,0x13,0x0f].includes(p[0]))).toBe(false);
+});
 test('wrong manual build and mid-verification restart are rejected', async () => {
   const device = new FirmwareFakeDevice(); device.mode = 'manual'; device.profile = 0x8006; device.build = 0;
   await expect(connection(device).verify(manifest[1])).rejects.toThrow('Wrong manual test build');

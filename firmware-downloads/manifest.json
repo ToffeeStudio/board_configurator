@@ -2,18 +2,20 @@
   {
     "id": "normal",
     "name": "Normal · 940 mA",
-    "description": "Latest normal profile9. Estimated-current limiting, front/badge 200/255, saved lighting and 1s dark + 1s fade.",
+    "description": "15 October lighting v3: 45 front modes and independent badge animations. Profile9, front/badge 200/255, saved lighting and 1s dark + 1s fade. Built/tested offline; not yet flashed.",
     "profile": 9,
+    "lightingProtocol": 3,
     "mode": "normal",
     "testBuild": null,
     "file": "normal.uf2",
-    "sha256": "78d05883df9de9fcee88d9c216aa744be6ef1d4a55eeffbf2504b500f61f282b"
+    "sha256": "ecf6ed3af92a1b6bc4d2afd595bbff03bffa9202f5409fae9df18c270ff9f03b"
   },
   {
     "id": "manual",
     "name": "Unlimited measurement test",
     "description": "Build 0x26101002. Exact 0–255 output, no current limiter or timeout, starts dark, test lighting not saved. Uses the older informational estimator.",
     "profile": 32774,
+    "lightingProtocol": 2,
     "mode": "manual",
     "testBuild": 638586882,
     "file": "manual.uf2",
@@ -22,11 +24,12 @@
   {
     "id": "current-unlimited",
     "name": "Normal · no current limit",
-    "description": "Profile10. Normal saves and startup fade, front/badge 200/255 retained. Current estimate is informational only; saved high output returns after restart.",
+    "description": "Lighting v3/profile10. Normal saves, animations, startup fade and front/badge 200/255 retained. Current estimate only; saved high output returns after restart. Not yet flashed.",
     "profile": 10,
+    "lightingProtocol": 3,
     "mode": "current-unlimited",
     "testBuild": null,
     "file": "current-unlimited.uf2",
-    "sha256": "900c0d67e20557ed904c88dec8fa98a064f9904f84ba912fa21b8fd1640d9d22"
+    "sha256": "cc051f75779f2b3aaf880698b7967337229bc065a97728fb954625848bb5c969"
   }
 ]

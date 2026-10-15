@@ -2,7 +2,7 @@ import {expect,test} from 'bun:test';
 import {readFileSync} from 'node:fs';
 import {Picoboot,FLASH_BASE,uf2Payload,eraseImage} from './picoboot.mjs';
 class Usb {
-  flash=new Uint8Array(90112).fill(0x5a); packets:Uint8Array[]=[];
+  flash=new Uint8Array(0x100000).fill(0x5a); packets:Uint8Array[]=[];
   code=0;token=0;length=0;address=0;size=0;dataPending=false;xip=false;flashPrepared=false;
   short=false;badStatus=false;shortRead=false;
   async controlTransferOut(){return{status:'ok',bytesWritten:0};}
@@ -28,19 +28,22 @@ class Usb {
 const session=(usb:Usb)=>new Picoboot(usb,1,4,3);
 test('same UF2 extraction follows the validated block addresses and payload only',()=>{
   const uf2=new Uint8Array(readFileSync('firmware-downloads/normal.uf2')),binary=uf2Payload(uf2);
-  expect(binary.length).toBe(88320);
+  expect(binary.length).toBe(uf2.length / 512 * 256);
+  for (let block=0; block<uf2.length/512; block++)
+    expect(binary.slice(block*256,(block+1)*256)).toEqual(uf2.slice(block*512+32,block*512+288));
   expect(binary.slice(0,256)).toEqual(uf2.slice(32,288));
   expect(binary.slice(-256)).toEqual(uf2.slice(-480,-224));
 });
 test('read/erase/program/readback preserves bytes beyond the UF2 in its last sector',async()=>{
   const usb=new Usb(),c=session(usb),payload=uf2Payload(new Uint8Array(readFileSync('firmware-downloads/normal.uf2')));
-  await c.prepareRead();const before=await c.readImage(90112,()=>{}),image=eraseImage(payload,before);
+  const affected=Math.ceil(payload.length/4096)*4096;
+  await c.prepareRead();const before=await c.readImage(affected,()=>{}),image=eraseImage(payload,before);
   expect(image.slice(payload.length)).toEqual(before.slice(payload.length));
   await c.writeImage(image,()=>{});expect(await c.readImage(image.length,()=>{})).toEqual(image);
   const erase=usb.packets.find(p=>p[8]===3)!;
   expect(new DataView(erase.buffer).getUint32(16,true)).toBe(FLASH_BASE);
-  expect(new DataView(erase.buffer).getUint32(20,true)).toBe(90112);
-  expect(usb.packets.filter(p=>p[8]===5).length).toBe(22);
+  expect(new DataView(erase.buffer).getUint32(20,true)).toBe(affected);
+  expect(usb.packets.filter(p=>p[8]===5).length).toBe(affected/4096);
 });
 test('invalid alignment/range/backup fails before any erase or programming',async()=>{
   const usb=new Usb(),c=session(usb);

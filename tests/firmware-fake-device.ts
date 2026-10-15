@@ -3,6 +3,7 @@ export class FirmwareFakeDevice extends EventTarget {
   vendorId = 0x1067; productId = 0x626d;
   collections = [{usagePage: 0xff60, usage: 0x61}];
   opened = true; profile = 9; mode = 'normal'; build = 0x26101002;
+  lightingProtocol = 3;
   packets: number[][] = []; booted = false; timeout = false; badEcho = false; restarted = false;
   keymap = new Uint8Array(144).fill(7); macros = new Uint8Array(56).fill(5); layout = new Uint8Array([1, 2, 3, 4]);
   async open() {this.opened = true;}
@@ -23,6 +24,8 @@ export class FirmwareFakeDevice extends EventTarget {
           .forEach((v, i) => view.setUint16(3 + i * 2, v, true));
         reply[25] = reply[1] === 2 ? 200 : 0;
       } else if (packet[1] === 0x86) {reply[1] = 1; view.setUint32(9, this.build, true);}
+      else if (packet[1] === 0x85) reply.set(this.mode === 'manual' || this.lightingProtocol === 2
+        ? [2,66,22,16,104,9] : [3,66,22,16,104,45,6],1);
       else throw new Error('Forbidden custom command in updater');
     } else if (packet[0] === 1) {reply[1] = 0; reply[2] = 12;}
     else if (packet[0] === 0x11) reply[1] = this.keymap.length / 144;

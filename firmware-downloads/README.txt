@@ -5,6 +5,9 @@ the intended Module. Unlimited variants can overload the board: watch the
 physical meter. The 940 mA limit is an ESTIMATE, not an onboard current sensor.
 
 Choices:
+The two normal variants are 15 October lighting-v3 local candidates:45 front
+options and independent badge animations. Built and tested offline, NOT yet
+flashed or physically verified. The manual measurement image is unchanged.
 normal.uf2: normal profile9, 940 mA estimate limit, front/badge rescaled to200,
   normal saves and 1-second dark startup followed by 1-second fade.
 manual.uf2: manual build0x26101002/profile0x8006; no output/current cap or timeout,
@@ -51,10 +54,12 @@ On a copy failure STOP: don't loop/retry writes blindly. Keep the recovery copy.
 SHA256 values are in manifest.json. GPL license is included. Complete firmware
 source is available in https://github.com/ToffeeStudio/qmk_firmware on the
 screenless-pcb branch. Exact corresponding source checkpoints:
-  normal.uf2: af994d79b5215235ad269ce759b82865f7c45ac0
+  normal.uf2: 03d5cb1c3f
   manual.uf2: 5b96a707636bb8ec70a2ba831da1b6eec382d7c6
-  current-unlimited.uf2: d94f43ae6e9c712c8f6e77a9ef8ed03f5469a9bf
+  current-unlimited.uf2: 03d5cb1c3f
   bundled Python updater: d94f43ae6e9c712c8f6e77a9ef8ed03f5469a9bf
+The new03d5cb1c3f source checkpoint is local on screenless-pcb; publish it before
+externally distributing the new normal images. Older checkpoints are published.
 
 Clone the complete repository, including its pinned submodules:
   git clone --recursive https://github.com/ToffeeStudio/qmk_firmware.git

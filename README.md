@@ -1,7 +1,22 @@
 # Toffee board configurator
 
-Current handover: **13 October 2026 (Australia/Sydney)**. This is the VIA fork
+Current handover: **15 October 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
+
+**15 October — implemented locally, NOT FLASHED/PUSHED/DEPLOYED:** lighting
+protocol3 adds45 front choices (reactive typing, splash, heatmap, digital rain,
+etc.) and independent badge Off/Solid/Breathing/Rainbow Cycle/Chase/Typing Pulse
+with speed. Existing effect IDs0–8,940mA estimate, front/badge200 and1s-dark/1s-fade
+remain. Storage v1 migrates without startup writes. Protocol2 boards keep only
+their supported controls and show an update hint. The local updater now bundles
+new normal candidates and verifies lighting protocol too; the manual image and
+saved measurement data are unchanged. Publish matching firmware source before
+externally distributing the new candidates.97 tests/10363 assertions, seven
+menu browser checks, five updater browser checks, full sanitizer firmware suite
+and both QMK builds pass. Same11 pre-existing TS errors; no physical validation.
+[Evidence](../AUTORESEARCH/04-09-2026%20PCB%20Lacking%20Current/effects-20261015-vQCnqK/README.md).
+
+The following13 October publication status is historical:
 The lighting work and regression tools are published on `lighting-fix`.
 The authorised release merges them into `main` with `DEBUG_ENABLED=true`.
 Both branches' histories and non-conflicting earlier `main` changes are retained
@@ -229,12 +244,14 @@ flashing. These sibling links assume the organised `projects/toffee/` workspace.
   after failure. Protocol-v2 replies match command and packet ID; VIA's reader
   ignores tagged custom traffic and purges old replies before sending rather
   than after awaiting a send. This does not lock other tabs/applications.
-- **Front Lighting:** Off plus eight effects, brightness, speed and colour.
+- **Front Lighting:** Off plus44 effects on protocol3, brightness, speed and colour.
+  Protocol2 keeps Off plus eight effects.
 - **Per-Key LED:** saved dimming/off for the verified 66 regular front LEDs;
   selecting a key reads its actual saved/current brightness.
 - **Badge:** its own on/off, brightness and solid colour, independent of both
-  front and rear. Detailed badge effects are deferred.
-- **Limits:** all four lighting menus require screenless lighting protocol v2.
+  front and rear. Protocol3 adds Breathing, Rainbow Cycle, Chase and Typing Pulse,
+  with independent speed. Protocol2 remains solid-only.
+- **Limits:** all four lighting menus require screenless lighting protocol v2 or v3.
   Older firmware reports a timeout/version error instead of hanging. Display
   and filesystem operations remain unsupported; legacy UI is still present.
 - **Verification:** 17 HID/map tests / 1,068 assertions and Vite production build

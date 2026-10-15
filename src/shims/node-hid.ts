@@ -130,7 +130,7 @@ const ExtendedHID = {
           // Never satisfy a pending VIA request or buffer them as VIA traffic.
           if (this.vendorId === 0x1067 && this.productId === 0x626d && message.length === 32 &&
               (message[0] === 0 || message[0] === 0xef) && message[26] === 0xa5 &&
-              message[27] >= 0x50 && message[27] <= 0x8c) return;
+              message[27] >= 0x50 && message[27] <= 0x8e) return;
           if (eventWaitBuffer[this.path].length !== 0) {
             // It should be impossible to have a handler in the buffer
             // that has a ts that happened after the current message

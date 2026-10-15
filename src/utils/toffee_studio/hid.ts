@@ -1,5 +1,6 @@
 import {ToffeeCDC} from './cdc';
 import lightingMap from './lighting-map.json';
+import {FRONT_EFFECTS, BADGE_EFFECTS} from './lighting-effects';
 
 /**
  * Command IDs for the custom module filesystem protocol.
@@ -36,6 +37,8 @@ export enum CommandID {
   MODULE_CMD_LED_GET = 0x84,
   MODULE_CMD_CAPABILITIES = 0x85,
   MODULE_CMD_POWER_STATUS = 0x88,
+  MODULE_CMD_BADGE_ANIMATION_GET = 0x8d,
+  MODULE_CMD_BADGE_ANIMATION_SET = 0x8e,
 }
 
 /**
@@ -230,6 +233,8 @@ export class ToffeeFileSystemAPI {
  */
 export type LightingState = {effect: number; speed: number; brightness: number; hue: number; saturation: number};
 export type BadgeState = {enabled: boolean; brightness: number; hue: number; saturation: number};
+export type BadgeAnimationState = BadgeState & {effect: number; speed: number};
+export type LightingCapabilities = {version: number; frontEffects: number; badgeEffects: number};
 export type PowerStatus = {
   frontBadgeMax: number | null; // v2 firmware output rescaling; v1 does not report it.
   manualMeasurement: boolean;
@@ -329,20 +334,23 @@ export class ToffeeLightingAPI {
     await this.command(CommandID.MODULE_CMD_SET_LED_BRIGHTNESS, payload);
   }
 
-  public async getCapabilities(): Promise<void> {
+  public async getCapabilities(): Promise<LightingCapabilities> {
     const data = await this.command(CommandID.MODULE_CMD_CAPABILITIES, new Uint8Array());
-    if (data[0] !== 2 || data[1] !== 66 || data[2] !== 22 || data[3] !== 16 || data[4] !== 104 || data[5] !== 9) {
+    if (data[1] !== 66 || data[2] !== 22 || data[3] !== 16 || data[4] !== 104 ||
+        !(data[0] === 2 && data[5] === 9 ||
+          data[0] === 3 && data[5] === FRONT_EFFECTS.length && data[6] === BADGE_EFFECTS.length)) {
       throw new Error('This menu requires the latest screenless Module lighting firmware.');
     }
+    return {version: data[0], frontEffects: data[5], badgeEffects: data[0] === 2 ? 2 : data[6]};
   }
   public async getFrontState(): Promise<LightingState> {
     const data = await this.command(CommandID.MODULE_CMD_FRONT_GET, new Uint8Array());
-    if (data[0] >= 9) throw new Error('Invalid front lighting effect.');
+    if (data[0] >= FRONT_EFFECTS.length) throw new Error('Invalid front lighting effect.');
     return {effect: data[0], speed: data[1], brightness: data[2], hue: data[3], saturation: data[4]};
   }
   public async setFrontState(state: LightingState): Promise<void> {
     await this.command(CommandID.MODULE_CMD_FRONT_SET,
-      new Uint8Array([byte(state.effect, 'Front effect', 8), byte(state.speed, 'Speed'),
+      new Uint8Array([byte(state.effect, 'Front effect', FRONT_EFFECTS.length - 1), byte(state.speed, 'Speed'),
         byte(state.brightness, 'Brightness'), byte(state.hue, 'Hue'), byte(state.saturation, 'Saturation')]));
   }
   public async getBadgeState(): Promise<BadgeState> {
@@ -354,6 +362,18 @@ export class ToffeeLightingAPI {
     await this.command(CommandID.MODULE_CMD_BADGE_SET,
       new Uint8Array([Number(state.enabled), byte(state.brightness, 'Brightness'),
         byte(state.hue, 'Hue'), byte(state.saturation, 'Saturation')]));
+  }
+  public async getBadgeAnimationState(): Promise<BadgeAnimationState> {
+    const data = await this.command(CommandID.MODULE_CMD_BADGE_ANIMATION_GET, new Uint8Array());
+    if (data[0] > 1 || data[4] >= BADGE_EFFECTS.length) throw new Error('Invalid badge animation state.');
+    return {enabled: data[0] === 1, brightness: data[1], hue: data[2], saturation: data[3],
+      effect: data[4], speed: data[5]};
+  }
+  public async setBadgeAnimationState(state: BadgeAnimationState): Promise<void> {
+    await this.command(CommandID.MODULE_CMD_BADGE_ANIMATION_SET,
+      new Uint8Array([Number(state.enabled), byte(state.brightness, 'Brightness'),
+        byte(state.hue, 'Hue'), byte(state.saturation, 'Saturation'),
+        byte(state.effect, 'Badge effect', BADGE_EFFECTS.length - 1), byte(state.speed, 'Speed')]));
   }
   public async getLedBrightness(index: number): Promise<number> {
     const data = await this.command(CommandID.MODULE_CMD_LED_GET, new Uint8Array([frontIndex(index)]));

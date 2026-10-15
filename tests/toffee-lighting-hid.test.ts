@@ -2,6 +2,7 @@ import {describe, expect, test} from 'bun:test';
 import {CommandID, ToffeeHIDDevice, ToffeeLightingAPI} from '../src/utils/toffee_studio/hid';
 import lightingMap from '../src/utils/toffee_studio/lighting-map.json';
 import {HID} from '../src/shims/node-hid';
+import {FRONT_EFFECTS, BADGE_EFFECTS} from '../src/utils/toffee_studio/lighting-effects';
 
 class MockHID extends EventTarget {
   opened = false;
@@ -69,6 +70,43 @@ function powerPayload(): Uint8Array {
     .forEach((value, index) => view.setUint16(2 + index * 2, value, true));
   return data;
 }
+
+describe('Expanded lighting protocol', () => {
+  test('v3 advertises exact front/badge counts; unknown versions and mismatched counts fail', async () => {
+    const device = new MockHID(async () => device.reply([0, 3, 66, 22, 16, 104, FRONT_EFFECTS.length, BADGE_EFFECTS.length]));
+    const api = new ToffeeLightingAPI(new ToffeeHIDDevice(asHID(device)));
+    expect(await api.getCapabilities()).toEqual({version: 3, frontEffects: 45, badgeEffects: 6});
+    for (const caps of [[4,66,22,16,104,45,6], [3,66,22,16,104,44,6], [3,66,22,16,104,45,5]]) {
+      device.onSend = async () => device.reply([0, ...caps]);
+      await expect(api.getCapabilities()).rejects.toThrow('latest screenless');
+    }
+  });
+  test('all appended front modes round-trip and remain queued with independent badge animation', async () => {
+    let front = [1,100,18,40,255], badge = [1,18,40,255,1,100];
+    const device = new MockHID(async p => {
+      if (p[1] === 0x81) front = [...p.slice(6,11)];
+      if (p[1] === 0x8e) badge = [...p.slice(6,12)];
+      device.reply(p[1] === 0x80 ? [0,...front] : p[1] === 0x8d ? [0,...badge] : [0]);
+    });
+    const api = new ToffeeLightingAPI(new ToffeeHIDDevice(asHID(device)));
+    for (const {value: effect} of FRONT_EFFECTS) {
+      await api.setFrontState({effect, speed:255, brightness:200, hue:40, saturation:255});
+      expect((await api.getFrontState()).effect).toBe(effect);
+    }
+    for (const {value: effect} of BADGE_EFFECTS) {
+      await api.setBadgeAnimationState({enabled:effect !== 0, effect, speed:200, brightness:70, hue:20, saturation:255});
+      expect(await api.getBadgeAnimationState()).toEqual({enabled:effect !== 0, effect, speed:200, brightness:70, hue:20, saturation:255});
+      expect((await api.getFrontState()).effect).toBe(44);
+    }
+    const before = device.packets.length;
+    await expect(api.setBadgeAnimationState({enabled:true,effect:6,speed:100,brightness:18,hue:0,saturation:255})).rejects.toThrow('Badge effect');
+    expect(device.packets.length).toBe(before);
+    device.onSend = async () => device.reply([0, 1,18,40,255,6,100]);
+    await expect(api.getBadgeAnimationState()).rejects.toThrow('Invalid badge');
+    device.onSend = async () => device.reply([0xef]);
+    await expect(api.getBadgeAnimationState()).rejects.toThrow('status 0xef');
+  });
+});
 
 describe('Module power telemetry', () => {
   test('reads firmware v2 output range without assuming a hard-coded cap', async () => {
@@ -287,7 +325,7 @@ describe('Module lighting HID', () => {
     expect(await api.getBadgeState()).toEqual({enabled: true, brightness: 18, hue: 170, saturation: 255});
     device.onSend = async () => device.reply([0, 1, 66, 22, 16, 104, 9]);
     await expect(api.getCapabilities()).rejects.toThrow('latest screenless');
-    device.onSend = async () => device.reply([0, 9]);
+    device.onSend = async () => device.reply([0, FRONT_EFFECTS.length]);
     await expect(api.getFrontState()).rejects.toThrow('Invalid front');
     await expect(api.getBadgeState()).rejects.toThrow('Invalid badge');
     device.onSend = async () => device.reply([0, 10]);
@@ -315,7 +353,7 @@ describe('Module lighting HID', () => {
         await expect(command()).rejects.toThrow('must be an integer');
     }
     await expect(api.setAnimation(10)).rejects.toThrow('Underglow effect');
-    await expect(api.setFrontState({effect: 9, speed: 100, brightness: 18, hue: 0, saturation: 0}))
+    await expect(api.setFrontState({effect: FRONT_EFFECTS.length, speed: 100, brightness: 18, hue: 0, saturation: 0}))
       .rejects.toThrow('Front effect');
     expect(device.packets.length).toBe(0);
   });
@@ -359,7 +397,7 @@ describe('Module lighting HID', () => {
     expect((await api.getFrontState()).brightness).toBe(18);
     expect(resolved).toBe(false);
     const debug = new ToffeeHIDDevice(asHID(device));
-    for (const command of [0x86, 0x88, 0x89, 0x8a, 0x8b, 0x8c]) {
+    for (const command of [0x86, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e]) {
       await debug.executeCommand(command as CommandID);
       expect(resolved).toBe(false);
     }

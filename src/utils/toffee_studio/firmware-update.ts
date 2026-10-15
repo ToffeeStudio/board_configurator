@@ -4,6 +4,7 @@ import {DEBUG_ENABLED} from '../../config/debug';
 export type FirmwareChoice = {
   id: string; name: string; description: string; file: string; sha256: string;
   profile: number; mode: 'normal' | 'manual' | 'current-unlimited'; testBuild: number | null;
+  lightingProtocol: number;
 };
 export type ViaSettings = {layers: number; keymap: string; macros: string; layout: string};
 export const MODULE_FILTER = {vendorId: 0x1067, productId: 0x626d, usagePage: 0xff60, usage: 0x61};
@@ -149,6 +150,9 @@ export class FirmwareConnection {
       if (status !== 0 || new DataView(data.buffer, data.byteOffset).getUint32(8, true) !== choice.testBuild)
         throw new Error('Wrong manual test build. No backup written.');
     }
+    const capabilities = await new ToffeeLightingAPI(hid).getCapabilities();
+    if (capabilities.version !== choice.lightingProtocol)
+      throw new Error('Connected firmware does not match the selected lighting protocol. No backup written.');
     const start = Date.now(); let previous = -1;
     do {
       const reply = await this.via(2, new Uint8Array([1]));
