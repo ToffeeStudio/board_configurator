@@ -1,8 +1,39 @@
 # Toffee board configurator
 
-Current handover: **15 October 2026 (Australia/Sydney)**. This is the VIA fork
+Current handover: **19 October 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
 
+**19 October — integrated browser WebUSB updater.**
+`/toffee-firmware/` remains isolated from Redux/VIA polling, but now writes via
+the RP2040 ROM's vendor PICOBOOT interface: Update firmware → browser device
+permissions → automatic backup/write/readback/reboot/VIA verification. No Finder,
+manual UF2 copying or Python installation. Already-granted devices reconnect
+automatically where the browser permits; otherwise a permission button appears.
+All three catalogue variants are supported; DEBUG_ENABLED still gates everything.
+Private VIA and original affected firmware sectors are stored only in this
+browser's dedicated IndexedDB, before boot/erase respectively. Originals retain
+the unused final-sector tail; the entire written range is byte-verified before
+reboot. Failed backups stop writing; uncertain writes are never automatically
+retried. Optional recovery downloads remain, but no private data is uploaded.
+
+Render connector diagnosis: service/main deploy6369444 contains the updater
+chunk, but direct requests for firmware/lighting/debug paths return404. Other
+sidebar links use React navigation; Firmware Update deliberately reloads the
+page to isolate HID, exposing the missing effective SPA rewrite. The approved
+fix emits `dist/toffee-firmware/index.html` from the same built React HTML and
+handles trailing slashes. It works on plain static hosting without a Dashboard
+change. Other app deep links still need a general Render SPA rewrite if desired.
+
+The integration is simulated/tested without a connected PCB. The underlying
+transport's physical12 October result does not prove this new end-to-end UI on
+hardware. Normal v3 binary is unchanged from the15 October flash; matching
+firmware source is now published through275ff49cb2 before this release.106 offline
+tests/10423 assertions, complete browser simulations, static-host checks, Debug-off
+checks and production builds pass. Same11 pre-existing TypeScript errors remain.
+Deployment status is recorded separately; a source push is not proof of a live
+site. [Implementation and verification](../AUTORESEARCH/04-09-2026%20PCB%20Lacking%20Current/web-updater-20261019-xTZnlx/README.md).
+
+The following15 October implementation-only status is historical:
 **15 October — implemented locally, NOT FLASHED/PUSHED/DEPLOYED:** lighting
 protocol3 adds45 front choices (reactive typing, splash, heatmap, digital rain,
 etc.) and independent badge Off/Solid/Breathing/Rainbow Cycle/Chase/Typing Pulse

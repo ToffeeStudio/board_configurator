@@ -5,9 +5,10 @@ the intended Module. Unlimited variants can overload the board: watch the
 physical meter. The 940 mA limit is an ESTIMATE, not an onboard current sensor.
 
 Choices:
-The two normal variants are 15 October lighting-v3 local candidates:45 front
-options and independent badge animations. Built and tested offline, NOT yet
-flashed or physically verified. The manual measurement image is unchanged.
+The two normal variants include lighting-v3:45 front options and independent
+badge animations. Normal profile9 was flashed with protocol/settings checks on
+15 October; physical effect/cold-power checks remain pending. Profile10 has not
+been physically flashed. The manual measurement image is unchanged.
 normal.uf2: normal profile9, 940 mA estimate limit, front/badge rescaled to200,
   normal saves and 1-second dark startup followed by 1-second fade.
 manual.uf2: manual build0x26101002/profile0x8006; no output/current cap or timeout,
@@ -16,9 +17,16 @@ current-unlimited.uf2: normal profile10, current limit removed ONLY; keeps
   front/badge200, normal saves and startup. Saved high output can return!
 
 Browser:
-Use a desktop WebHID-capable browser on HTTPS or localhost. Choose a version,
-download the private VIA backup, enter bootloader, and copy the selected UF2
-to the RPI-RP2 drive. Reconnect on the update page and verify/restore VIA.
+Use desktop Chrome/Edge with WebHID and WebUSB on HTTPS or localhost. Choose a
+version and press Update firmware. Approve Module and RP2 Boot when prompted.
+The page backs up locally, enters bootloader, writes via PICOBOOT, reads back
+every affected byte, reboots and verifies/restores VIA. No manual UF2 copying
+or Python installation is needed. A reconnect permission may be required.
+Recovery settings and original affected sectors are stored in this browser's
+IndexedDB, never uploaded. Download them optionally; clearing site data removes
+them. They are not a full-device dump. Failed backup prevents writing; uncertain
+writes are not retried automatically. The integrated19 October workflow is
+tested with simulated devices; the transport was physically verified12 October.
 Physical boot/reset can enter bootloader if application HID is unresponsive.
 Do not confuse firmware download or bootloader entry with a completed flash.
 
@@ -58,8 +66,8 @@ screenless-pcb branch. Exact corresponding source checkpoints:
   manual.uf2: 5b96a707636bb8ec70a2ba831da1b6eec382d7c6
   current-unlimited.uf2: 03d5cb1c3f
   bundled Python updater: d94f43ae6e9c712c8f6e77a9ef8ed03f5469a9bf
-The new03d5cb1c3f source checkpoint is local on screenless-pcb; publish it before
-externally distributing the new normal images. Older checkpoints are published.
+The matching source checkpoints must be available on screenless-pcb before
+publishing these binaries. Private settings and recovery images are not bundled.
 
 Clone the complete repository, including its pinned submodules:
   git clone --recursive https://github.com/ToffeeStudio/qmk_firmware.git

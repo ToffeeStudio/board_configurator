@@ -2,7 +2,7 @@
   {
     "id": "normal",
     "name": "Normal · 940 mA",
-    "description": "15 October lighting v3: 45 front modes and independent badge animations. Profile9, front/badge 200/255, saved lighting and 1s dark + 1s fade. Built/tested offline; not yet flashed.",
+    "description": "Lighting v3: 45 front modes and independent badge animations. Profile9, front/badge 200/255, saved lighting and 1s dark + 1s fade. Flashed with protocol/settings verification on 15 October; physical effect checks pending.",
     "profile": 9,
     "lightingProtocol": 3,
     "mode": "normal",
