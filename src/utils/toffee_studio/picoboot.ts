@@ -1,36 +1,54 @@
-// RP2040-only experiment. Protocol: Raspberry Pi pico-sdk picoboot.h and
+// RP2040 ROM transport, hardware-verified on 12 October 2026. Protocol: pico-sdk
 // picotool/picoboot_connection.c. No filesystem access or native USB bridge.
 export const FLASH_BASE = 0x10000000;
-const SECTOR = 4096;
-export function uf2Payload(uf2) {
+export const SECTOR = 4096;
+type Alternate = {alternateSetting: number; interfaceClass: number; interfaceSubclass: number; interfaceProtocol: number;
+  endpoints: {type: string; direction: string; endpointNumber: number}[]};
+type Control = {requestType: 'vendor'; recipient: 'interface'; request: number; value: number; index: number};
+export type PicobootDevice = {
+  vendorId: number; productId: number; serialNumber: string; opened: boolean;
+  configuration: {interfaces: {interfaceNumber: number; alternates: Alternate[]}[]};
+  open(): Promise<void>; close(): Promise<void>; selectConfiguration(value: number): Promise<void>;
+  claimInterface(value: number): Promise<void>; selectAlternateInterface(iface: number, alternate: number): Promise<void>;
+  controlTransferOut(setup: Control, bytes: Uint8Array): Promise<{status: string}>;
+  controlTransferIn(setup: Control, length: number): Promise<{status: string; data: DataView}>;
+  transferOut(endpoint: number, bytes: Uint8Array): Promise<{status: string; bytesWritten: number}>;
+  transferIn(endpoint: number, length: number): Promise<{status: string; data: DataView}>;
+};
+export type BrowserUSB = {
+  requestDevice(options: {filters: {vendorId: number; productId: number}[]}): Promise<PicobootDevice>;
+  getDevices(): Promise<PicobootDevice[]>;
+};
+export type Progress = (done: number, total: number) => void;
+export function uf2Payload(uf2: Uint8Array) {
   // Caller must validate the complete sequential UF2 and its SHA-256 first.
   const payload = new Uint8Array(uf2.length / 2);
   for (let offset = 0; offset < uf2.length; offset += 512)
     payload.set(uf2.subarray(offset + 32, offset + 288), offset / 2);
   return payload;
 }
-export function eraseImage(payload, before) {
+export function eraseImage(payload: Uint8Array, before: Uint8Array) {
   if (!payload.length || before.length !== Math.ceil(payload.length / SECTOR) * SECTOR)
     throw new Error('Require original readback covering exactly the affected erase sectors.');
   const result = before.slice(); result.set(payload); return result;
 }
-function range(address, size) {
+function range(address: number, size: number) {
   if (!Number.isInteger(address) || !Number.isInteger(size) || address < FLASH_BASE ||
       size <= 0 || address + size > FLASH_BASE + 1024 * 1024 || address % 256 || size % 256)
-    throw new Error('Experiment permits aligned firmware access only within the first 1 MiB.');
+    throw new Error('Permit aligned firmware access only within the first 1 MiB.');
   const args = new Uint8Array(8), view = new DataView(args.buffer);
   view.setUint32(0, address, true); view.setUint32(4, size, true); return args;
 }
-export async function openPicoboot(device) {
-  if (device.vendorId !== 0x2e8a || device.productId !== 3)
-    throw new Error('Select an RP2040 ROM bootloader.');
+export async function openPicoboot(device: PicobootDevice) {
+  if (device.vendorId !== 0x2e8a || device.productId !== 3 || !device.serialNumber)
+    throw new Error('Select an RP2040 ROM bootloader with a USB serial.');
   await device.open();
   await device.selectConfiguration(1);
   const interfaces = device.configuration.interfaces.filter(i =>
     i.alternates.some(a => a.interfaceClass === 0xff && a.interfaceSubclass === 0 && a.interfaceProtocol === 0));
   if (interfaces.length !== 1) throw new Error('Require one PICOBOOT vendor interface.');
   const iface = interfaces[0];
-  const alternate = iface.alternates.find(a => a.interfaceClass === 0xff && a.interfaceSubclass === 0 && a.interfaceProtocol === 0);
+  const alternate = iface.alternates.find(a => a.interfaceClass === 0xff && a.interfaceSubclass === 0 && a.interfaceProtocol === 0)!;
   const incoming = alternate.endpoints.filter(e => e.type === 'bulk' && e.direction === 'in');
   const outgoing = alternate.endpoints.filter(e => e.type === 'bulk' && e.direction === 'out');
   if (incoming.length !== 1 || outgoing.length !== 1) throw new Error('Require PICOBOOT bulk IN and OUT.');
@@ -40,19 +58,19 @@ export async function openPicoboot(device) {
   return new Picoboot(device, iface.interfaceNumber, incoming[0].endpointNumber, outgoing[0].endpointNumber);
 }
 export class Picoboot {
-  constructor(device, iface, incoming, outgoing) {
-    this.device = device; this.iface = iface; this.incoming = incoming; this.outgoing = outgoing;
-    this.token = 0; this.failed = false; this.busy = false;
-  }
-  async operation(work) {
+  private token = 0;
+  private failed = false;
+  private busy = false;
+  constructor(readonly device: PicobootDevice, private iface: number, private incoming: number, private outgoing: number) {}
+  private async operation<T>(work: () => Promise<T>): Promise<T> {
     if (this.failed || this.busy) throw new Error('PICOBOOT session unavailable; no automatic retry.');
-    this.busy = true; let timer;
+    this.busy = true; let timer: ReturnType<typeof setTimeout>;
     try {
-      return await Promise.race([work(), new Promise((_, reject) => {
+      return await Promise.race([work(), new Promise<never>((_, reject) => {
         timer = setTimeout(() => reject(new Error('PICOBOOT transfer timed out; outcome uncertain.')), 8000);
       })]);
     } catch (error) {this.failed = true; throw error;}
-    finally {clearTimeout(timer); this.busy = false;}
+    finally {clearTimeout(timer!); this.busy = false;}
   }
   async resetInterface() {
     await this.operation(async () => {
@@ -62,22 +80,22 @@ export class Picoboot {
       console.info('PICOBOOT reset: complete');
     });
   }
-  async command(code, args, length, output) {
+  async command(code: number, args: Uint8Array, length: number, output: Uint8Array) {
     return this.operation(async () => {
       const packet = new Uint8Array(32), view = new DataView(packet.buffer), token = ++this.token;
       view.setUint32(0, 0x431fd10b, true); view.setUint32(4, token, true);
       packet[8] = code; packet[9] = args.length; view.setUint32(12, length, true); packet.set(args, 16);
-      const send = async bytes => {
-        console.info('PICOBOOT OUT:', code, token, bytes.length);
+      const send = async (bytes: Uint8Array) => {
+        if (this.failed) throw new Error('PICOBOOT session failed; transfer stopped.');
         const result = await this.device.transferOut(this.outgoing, bytes);
+        if (this.failed) throw new Error('PICOBOOT session failed; transfer stopped.');
         if (result.status !== 'ok' || result.bytesWritten !== bytes.length) throw new Error('PICOBOOT short/failed OUT transfer.');
-        console.info('PICOBOOT OUT complete:', code, token);
       };
-      const receive = async count => {
-        console.info('PICOBOOT IN:', code, token, count);
+      const receive = async (count: number) => {
+        if (this.failed) throw new Error('PICOBOOT session failed; transfer stopped.');
         const result = await this.device.transferIn(this.incoming, count);
+        if (this.failed) throw new Error('PICOBOOT session failed; transfer stopped.');
         if (result.status !== 'ok') throw new Error('PICOBOOT failed IN transfer.');
-        console.info('PICOBOOT IN complete:', code, token, result.data.byteLength);
         return new Uint8Array(result.data.buffer, result.data.byteOffset, result.data.byteLength).slice();
       };
       await send(packet);
@@ -92,12 +110,11 @@ export class Picoboot {
       // other commands acknowledge with a zero-length IN packet (max length1).
       if (code & 0x80) await send(new Uint8Array(1));
       else if ((await receive(1)).length !== 0) throw new Error('Invalid PICOBOOT acknowledgement.');
-      console.info('PICOBOOT status:', code, token);
       const status = await this.device.controlTransferIn({requestType:'vendor', recipient:'interface', request:0x42, value:0, index:this.iface}, 16);
       if (status.status !== 'ok' || status.data.byteLength !== 16 || status.data.getUint32(0,true) !== token ||
           status.data.getUint32(4,true) !== 0 || status.data.getUint8(8) !== code || status.data.getUint8(9) !== 0)
         throw new Error('PICOBOOT command status mismatch/failure.');
-      console.info('PICOBOOT command complete:', code, token);
+      console.info('PICOBOOT command:', code, token, length);
       return result;
     });
   }
@@ -109,11 +126,11 @@ export class Picoboot {
     await this.command(6, new Uint8Array(), 0, new Uint8Array());
     await this.command(7, new Uint8Array(), 0, new Uint8Array());
   }
-  async read(address, size) {
+  async read(address: number, size: number) {
     const args = range(address, size);
     return this.command(0x84, args, size, new Uint8Array());
   }
-  async readImage(size, progress) {
+  async readImage(size: number, progress: Progress) {
     range(FLASH_BASE, size);
     const bytes = new Uint8Array(size);
     for (let offset = 0; offset < size; offset += SECTOR) {
@@ -123,7 +140,7 @@ export class Picoboot {
     }
     return bytes;
   }
-  async writeImage(bytes, progress) {
+  async writeImage(bytes: Uint8Array, progress: Progress) {
     if (!bytes.length || bytes.length % SECTOR) throw new Error('Require complete preserved erase sectors.');
     range(FLASH_BASE, bytes.length);
     await this.command(6, new Uint8Array(), 0, new Uint8Array());

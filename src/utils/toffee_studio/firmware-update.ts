@@ -22,6 +22,7 @@ export function validateSettings(value: ViaSettings): ViaSettings {
 }
 export async function validateFirmware(bytes: Uint8Array, expectedHash: string) {
   if (!bytes.length || bytes.length % 512) throw new Error('Incomplete UF2 image.');
+  if (bytes.length > 2 * 1024 * 1024) throw new Error('Firmware exceeds the permitted first 1 MiB.');
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   for (let offset = 0; offset < bytes.length; offset += 512) {
     const u32 = (n: number) => view.getUint32(offset + n, true);
@@ -44,13 +45,17 @@ export async function fetchFirmware(choice: FirmwareChoice) {
 export async function chooseModule(): Promise<HIDDevice> {
   requireDebug();
   const selected = await navigator.hid.requestDevice({filters: [MODULE_FILTER]});
-  const modules = (await navigator.hid.getDevices()).filter(d =>
-    d.vendorId === MODULE_FILTER.vendorId && d.productId === MODULE_FILTER.productId &&
-    d.collections.some(c => c.usagePage === MODULE_FILTER.usagePage && c.usage === MODULE_FILTER.usage));
+  const modules = await grantedModules();
   if (selected.length !== 1 || modules.length !== 1 || modules[0] !== selected[0])
     throw new Error('Connect exactly one Module and select its raw HID interface.');
   if (!selected[0].opened) await selected[0].open();
   return selected[0];
+}
+export async function grantedModules(): Promise<HIDDevice[]> {
+  requireDebug();
+  return (await navigator.hid.getDevices()).filter(d =>
+    d.vendorId === MODULE_FILTER.vendorId && d.productId === MODULE_FILTER.productId &&
+    d.collections.some(c => c.usagePage === MODULE_FILTER.usagePage && c.usage === MODULE_FILTER.usage));
 }
 
 // Dedicated page only: never share this reader with VIA's normal polling loop.

@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
 import {readFileSync} from 'node:fs';
-import {Picoboot,FLASH_BASE,uf2Payload,eraseImage} from './picoboot.mjs';
+import {Picoboot,FLASH_BASE,uf2Payload,eraseImage, type PicobootDevice} from '../src/utils/toffee_studio/picoboot';
 class Usb {
   flash=new Uint8Array(0x100000).fill(0x5a); packets:Uint8Array[]=[];
   code=0;token=0;length=0;address=0;size=0;dataPending=false;xip=false;flashPrepared=false;
@@ -25,7 +25,7 @@ class Usb {
   }
   async transferIn(endpoint:number,count:number){expect(endpoint).toBe(4);const data=count===1?new Uint8Array():this.flash.slice(this.address-FLASH_BASE,this.address-FLASH_BASE+count-(this.shortRead?1:0));return{status:'ok',data:new DataView(data.buffer)};}
 }
-const session=(usb:Usb)=>new Picoboot(usb,1,4,3);
+const session=(usb:Usb)=>new Picoboot(usb as unknown as PicobootDevice,1,4,3);
 test('same UF2 extraction follows the validated block addresses and payload only',()=>{
   const uf2=new Uint8Array(readFileSync('firmware-downloads/normal.uf2')),binary=uf2Payload(uf2);
   expect(binary.length).toBe(uf2.length / 512 * 256);
@@ -34,6 +34,20 @@ test('same UF2 extraction follows the validated block addresses and payload only
   expect(binary.slice(0,256)).toEqual(uf2.slice(32,288));
   expect(binary.slice(-256)).toEqual(uf2.slice(-480,-224));
 });
+test('timeout latches failure and a late OUT cannot continue the interrupted command', async () => {
+  const usb = new Usb(), c = session(usb);
+  let release!: () => void;
+  usb.transferOut = async () => {
+    await new Promise<void>(resolve => {release = resolve;});
+    return {status: 'ok', bytesWritten: 32};
+  };
+  const pending = c.prepareRead();
+  await expect(pending).rejects.toThrow('timed out');
+  release();
+  await Bun.sleep(20);
+  await expect(c.readImage(4096, () => {})).rejects.toThrow('unavailable');
+  expect(usb.packets).toHaveLength(0);
+}, 10000);
 test('read/erase/program/readback preserves bytes beyond the UF2 in its last sector',async()=>{
   const usb=new Usb(),c=session(usb),payload=uf2Payload(new Uint8Array(readFileSync('firmware-downloads/normal.uf2')));
   const affected=Math.ceil(payload.length/4096)*4096;
