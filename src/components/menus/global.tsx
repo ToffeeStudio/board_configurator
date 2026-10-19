@@ -46,7 +46,7 @@ export const UnconnectedGlobalMenu = () => {
         return (
           <GlowButton
             key={pane.key}
-            onClick={() => pane.path === FIRMWARE_PATH ? window.location.assign(pane.path) : navigate(pane.path)}
+            onClick={() => pane.path === FIRMWARE_PATH ? window.location.assign(pane.path + '/') : navigate(pane.path)}
             forceOn={pane.path === location}
             sx={{ fontSize: "16px" }}
           >

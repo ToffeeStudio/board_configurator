@@ -5,6 +5,7 @@ import {splitVendorChunkPlugin} from 'vite';
 import {createHtmlPlugin} from 'vite-plugin-html';
 import fs from 'fs';
 import {debugFirmwareAssets} from './scripts/debug-firmware-assets';
+import {firmwarePageEntry} from './scripts/firmware-page-entry';
 
 const hash = fs.readFileSync('public/definitions/hash.json', 'utf8');
 
@@ -12,6 +13,7 @@ const hash = fs.readFileSync('public/definitions/hash.json', 'utf8');
 export default defineConfig({
   plugins: [
     debugFirmwareAssets(),
+    firmwarePageEntry(),
     react(),
     createHtmlPlugin({
       inject: {

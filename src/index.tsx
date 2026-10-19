@@ -5,7 +5,7 @@ import {DEBUG_ENABLED, FIRMWARE_PATH} from './config/debug';
 
 const elem = document.getElementById('root');
 if (elem) {
-  if (window.location.pathname === FIRMWARE_PATH) {
+  if (window.location.pathname.replace(/\/+$/, '') === FIRMWARE_PATH) {
     // Do not import Redux/VIA/theme initialization or GLTF preloads in updater.
     const root = createRoot(elem);
     if (DEBUG_ENABLED) {
