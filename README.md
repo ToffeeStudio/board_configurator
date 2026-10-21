@@ -1,7 +1,29 @@
 # Toffee board configurator
 
-Current handover: **19 October 2026 (Australia/Sydney)**. This is the VIA fork
+Current handover: **21 October 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
+
+**21 October — single-button updates and guided recovery.** `/toffee-firmware/`
+uses one panel and one primary action through bootloader permission, flashing and
+post-reboot verification. **Recover an interrupted update** opens
+`/toffee-firmware/?recovery=1`. Select the matching saved attempt and confirm the
+connected keyboard before recovery. Already-verified bytes skip erase/program;
+a partial image is rewritten and read back against the saved target. If Module
+has restarted, recovery can finish settings checks without reflashing.
+
+Exact target UF2s, original affected sectors and available VIA settings are kept
+locally. Verification is persisted before reboot; completion follows mode/protocol,
+15-second uptime and settings checks. Older backups require the same release hash.
+No-backup reinstall is explicit and cannot restore missing settings. The same-origin
+update lock does not control other origins or native tools; close those first.
+A matching bootloader serial plus user confirmation is required where recorded.
+
+Physical interrupted-update qualification and the exact screenless PCB bootloader
+procedure remain pending. A partially written board may need physical bootloader
+entry; reconnecting alone is not a guarantee. Browser-only backups are lost if site
+data is cleared. Recovery does not automatically downgrade firmware or promise
+uninterrupted typing. Firmware images, current estimation and limiter settings
+are unchanged by this web release.
 
 **19 October — integrated browser WebUSB updater.**
 `/toffee-firmware/` remains isolated from Redux/VIA polling, but now writes via

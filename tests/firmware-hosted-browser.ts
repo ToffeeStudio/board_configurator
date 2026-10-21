@@ -23,12 +23,21 @@ try {
     assert.equal(response!.status(), 200);
     await page.getByRole('heading', {name: 'Module firmware update', exact: true}).waitFor();
     await page.getByRole('option', {name: 'Normal · 940 mA', exact: true}).waitFor({state: 'attached'});
-    await page.getByText('Direct browser update.', {exact: false}).waitFor();
-    assert.equal(await page.getByRole('button', {name: 'Update firmware', exact: true}).isDisabled(), true);
+    await page.getByText('Choose your firmware. We’ll install it and check your keyboard.', {exact: true}).waitFor();
+    await page.waitForFunction(() => !document.querySelector<HTMLButtonElement>('button')?.disabled);
+    assert.equal(await page.getByRole('button', {name: 'Update firmware', exact: true}).isEnabled(), true);
     await page.reload();
-    await page.getByRole('heading', {name: 'Local recovery backups', exact: true}).waitFor();
+    await page.getByText('Update details & saved backups', {exact: true}).waitFor();
+    assert.equal(await page.locator('button').count(), 1);
     checks.push('Live URL' + (suffix || ' without slash') + ': HTTP200, current updater/catalogue and refresh');
   }
+  const recovery = await page.goto('https://board-configurator.onrender.com/toffee-firmware/?recovery=1');
+  assert.equal(recovery!.status(), 200);
+  await page.getByRole('heading', {name: 'Recover your keyboard', exact: true}).waitFor();
+  await page.getByRole('option', {name: 'No saved backup — reinstall firmware', exact: true}).waitFor({state: 'attached'});
+  assert.equal(await page.locator('button').count(), 1);
+  assert.equal(await page.getByRole('button', {name: 'Recover keyboard', exact: true}).isDisabled(), true);
+  checks.push('Live recovery route: HTTP200, one primary action, explicit saved-update selection, no hardware commands');
   assert.equal(requests.some(r => r.includes('normal-index') || r.includes('.glb')), false);
   assert.deepEqual(errors, []);
   await page.screenshot({path: screenshot, fullPage: true});

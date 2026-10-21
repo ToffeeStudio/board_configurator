@@ -1,5 +1,6 @@
 import {CommandID, ToffeeHIDDevice, ToffeeLightingAPI} from './hid';
 import {DEBUG_ENABLED} from '../../config/debug';
+import {usbStep} from './picoboot';
 
 export type FirmwareChoice = {
   id: string; name: string; description: string; file: string; sha256: string;
@@ -48,7 +49,7 @@ export async function chooseModule(): Promise<HIDDevice> {
   const modules = await grantedModules();
   if (selected.length !== 1 || modules.length !== 1 || modules[0] !== selected[0])
     throw new Error('Connect exactly one Module and select its raw HID interface.');
-  if (!selected[0].opened) await selected[0].open();
+  if (!selected[0].opened) await usbStep(selected[0].open(), 'keyboard open');
   return selected[0];
 }
 export async function grantedModules(): Promise<HIDDevice[]> {

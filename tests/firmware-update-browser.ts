@@ -26,7 +26,7 @@ const fixture = new URL('/tests/firmware-update-fixture.html', base).href;
 const ready = async () => {
   await page.goto(fixture);
   await page.getByRole('option', {name: 'Normal · 940 mA', exact: true}).waitFor({state: 'attached'});
-  await page.getByLabel('Only the intended Module', {exact: false}).check();
+  assert.equal(await page.locator('button').count(), 1);
 };
 try {
   // The existing HTML plugin otherwise serves the app shell for fixture navigation.
@@ -39,7 +39,7 @@ try {
     await page.evaluate((mode: string) => {(window as any).updaterFixture.usbGranted = mode !== 'manual';}, mode);
     await page.getByRole('button', {name: 'Update firmware', exact: true}).click();
     if (mode === 'manual') {
-      const button = page.getByRole('button', {name: 'Connect RP2 Boot & finish update', exact: true});
+      const button = page.getByRole('button', {name: 'Allow bootloader access', exact: true});
       await button.waitFor();
       assert.equal(await page.evaluate(() => (window as any).usbFixture.packets.length), 0);
       await button.click();
@@ -60,7 +60,7 @@ try {
         erases: w.usbFixture.packets.filter((p: number[]) => p[8] === 3).length,
         archiveBeforeErase: w.updaterFixture.archiveBeforeErase, usbRequests: w.updaterFixture.usbRequests};
     }, payload.length);
-    assert.equal(actual.hash, expected); assert.equal(actual.saved, 'verified');
+    assert.equal(actual.hash, expected); assert.equal(actual.saved, 'complete');
     assert.equal(actual.original, true); assert.equal(actual.settings, true);
     assert.equal(actual.bootCommands, 1); assert.equal(actual.erases, 1); assert.equal(actual.archiveBeforeErase, true);
     assert.equal(actual.usbRequests, mode === 'manual' ? 1 : 0);
@@ -75,7 +75,7 @@ try {
     (window as any).updaterFixture.hidAfterReboot = false;
   });
   await page.getByRole('button', {name: 'Update firmware', exact: true}).click();
-  await page.getByRole('button', {name: 'Reconnect Module & verify'}).click();
+  await page.getByRole('button', {name: 'Reconnect keyboard'}).click();
   await page.getByRole('status').filter({hasText: 'Update complete.'}).waitFor();
   assert.deepEqual(await page.evaluate(() => [
     (window as any).updaterFixture.hidRequests,
@@ -85,7 +85,7 @@ try {
   await ready();
   await page.evaluate(() => {(window as any).updaterFixture.cancelUSB = true;});
   await page.getByRole('button', {name: 'Update firmware', exact: true}).click();
-  await page.getByRole('button', {name: 'Connect RP2 Boot & finish update'}).click();
+  await page.getByRole('button', {name: 'Allow bootloader access'}).click();
   await page.getByRole('alert').filter({hasText: 'User cancelled USB permission'}).waitFor();
   assert.equal(await page.evaluate(() => (window as any).usbFixture.packets.length), 0);
   check('Cancelled bootloader permission sends no USB commands and preserves prepared backup');
@@ -100,7 +100,7 @@ try {
     const commands = (window as any).usbFixture.packets;
     return [commands.filter((p: number[]) => p[8] === 3).length, commands.filter((p: number[]) => p[8] === 2).length];
   }), [1, 0]);
-  assert.equal(await page.getByRole('button', {name: 'Update firmware', exact: true}).isDisabled(), true);
+  assert.equal(await page.getByRole('button', {name: 'Update stopped', exact: true}).isDisabled(), true);
   check('Bad readback leaves bootloader, retains original sectors and offers no automatic reflash');
   await ready();
   await page.evaluate(() => {

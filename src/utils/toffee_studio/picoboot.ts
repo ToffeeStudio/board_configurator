@@ -20,6 +20,14 @@ export type BrowserUSB = {
   getDevices(): Promise<PicobootDevice[]>;
 };
 export type Progress = (done: number, total: number) => void;
+export async function usbStep<T>(operation: Promise<T>, name: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  try {
+    return await Promise.race([operation, new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`USB ${name} timed out. Reconnect before recovery.`)), 8000);
+    })]);
+  } finally {clearTimeout(timer!);}
+}
 export function uf2Payload(uf2: Uint8Array) {
   // Caller must validate the complete sequential UF2 and its SHA-256 first.
   const payload = new Uint8Array(uf2.length / 2);
@@ -42,8 +50,8 @@ function range(address: number, size: number) {
 export async function openPicoboot(device: PicobootDevice) {
   if (device.vendorId !== 0x2e8a || device.productId !== 3 || !device.serialNumber)
     throw new Error('Select an RP2040 ROM bootloader with a USB serial.');
-  await device.open();
-  await device.selectConfiguration(1);
+  await usbStep(device.open(), 'open');
+  await usbStep(device.selectConfiguration(1), 'configuration');
   const interfaces = device.configuration.interfaces.filter(i =>
     i.alternates.some(a => a.interfaceClass === 0xff && a.interfaceSubclass === 0 && a.interfaceProtocol === 0));
   if (interfaces.length !== 1) throw new Error('Require one PICOBOOT vendor interface.');
@@ -52,8 +60,8 @@ export async function openPicoboot(device: PicobootDevice) {
   const incoming = alternate.endpoints.filter(e => e.type === 'bulk' && e.direction === 'in');
   const outgoing = alternate.endpoints.filter(e => e.type === 'bulk' && e.direction === 'out');
   if (incoming.length !== 1 || outgoing.length !== 1) throw new Error('Require PICOBOOT bulk IN and OUT.');
-  await device.claimInterface(iface.interfaceNumber);
-  await device.selectAlternateInterface(iface.interfaceNumber, alternate.alternateSetting);
+  await usbStep(device.claimInterface(iface.interfaceNumber), 'claim');
+  await usbStep(device.selectAlternateInterface(iface.interfaceNumber, alternate.alternateSetting), 'alternate');
   console.info('PICOBOOT interface claimed:', iface.interfaceNumber);
   return new Picoboot(device, iface.interfaceNumber, incoming[0].endpointNumber, outgoing[0].endpointNumber);
 }
@@ -160,8 +168,10 @@ export class Picoboot {
       view.setUint32(0, 0x431fd10b, true); view.setUint32(4, ++this.token, true);
       packet[8] = 2; packet[9] = 12; packet.set(args,16);
       const sent = await this.device.transferOut(this.outgoing,packet);
+      if (this.failed) throw new Error('PICOBOOT session failed; reboot outcome uncertain.');
       if(sent.status !== 'ok' || sent.bytesWritten !== 32) throw new Error('Reboot command failed.');
       const ack = await this.device.transferIn(this.incoming,1);
+      if (this.failed) throw new Error('PICOBOOT session failed; reboot outcome uncertain.');
       if(ack.status !== 'ok' || ack.data.byteLength !== 0) throw new Error('Reboot acknowledgement failed.');
     });
   }

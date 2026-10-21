@@ -77,3 +77,20 @@ test('wrong manual build and mid-verification restart are rejected', async () =>
   device.mode = 'normal'; device.profile = 9; device.restarted = true;
   await expect(connection(device).verify(manifest[0])).rejects.toThrow('restarted');
 });
+test('settings recovery rereads and repairs interruption after first/middle/last keymap chunk', async () => {
+  for (const stopAfter of [1, 3, 6]) {
+    const device = new FirmwareFakeDevice(), c = connection(device), saved = await c.readSettings();
+    device.keymap.fill(0); device.macros.fill(0); device.layout.fill(0);
+    const send = device.sendReport.bind(device); let chunks = 0;
+    device.sendReport = async (id, packet) => {
+      await send(id, packet);
+      if (packet[0] === 0x13 && ++chunks === stopAfter) throw new Error('Simulated unplug during settings restore.');
+    };
+    await expect(c.restoreSettings(saved)).rejects.toThrow('unplug');
+    await expect(c.restoreSettings(saved)).rejects.toThrow('Reconnect');
+    device.sendReport = send;
+    await connection(device).restoreSettings(saved);
+    expect(await connection(device).readSettings()).toEqual(saved);
+    expect(device.packets.some(p => p[0] === 9 && p[1] === 0x79)).toBe(false);
+  }
+});
