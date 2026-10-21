@@ -5,6 +5,7 @@ class Usb {
   flash=new Uint8Array(0x100000).fill(0x5a); packets:Uint8Array[]=[];
   code=0;token=0;length=0;address=0;size=0;dataPending=false;xip=false;flashPrepared=false;
   short=false;badStatus=false;shortRead=false;
+  async clearHalt(direction:string,endpoint:number){expect([direction,endpoint]).toEqual(direction==='in'?['in',4]:['out',3]);}
   async controlTransferOut(){return{status:'ok',bytesWritten:0};}
   async controlTransferIn(){const b=new Uint8Array(16),v=new DataView(b.buffer);v.setUint32(0,this.token,true);v.setUint32(4,this.badStatus?1:0,true);b[8]=this.code;return{status:'ok',data:v};}
   async transferOut(endpoint:number,bytes:Uint8Array){
@@ -75,4 +76,37 @@ test('short transfers and failed command status prevent any subsequent command',
 test('short read fails without accepting partial image bytes',async()=>{
   const usb=new Usb(),c=session(usb);await c.prepareRead();usb.shortRead=true;
   await expect(c.readImage(4096,()=>{})).rejects.toThrow('short read');
+});
+test('reset clears host endpoint state before resetting the ROM command interface', async()=>{
+  const usb=new Usb(),c=session(usb),calls:string[]=[];
+  usb.clearHalt=async(direction,endpoint)=>{calls.push(`${direction}:${endpoint}`);};
+  usb.controlTransferOut=async()=>{calls.push('ROM reset');return{status:'ok',bytesWritten:0};};
+  await c.prepareRead();
+  expect(calls).toEqual(['in:4','out:3','ROM reset']);
+  expect(usb.packets[0][8]).toBe(1);
+});
+test('failed endpoint reset stops before any PICOBOOT command or erase', async()=>{
+  const usb=new Usb(),c=session(usb);
+  usb.clearHalt=async()=>{throw new Error('Host pipe unavailable');};
+  await expect(c.prepareRead()).rejects.toThrow('Host pipe unavailable');
+  expect(usb.packets).toHaveLength(0);
+  await expect(c.writeImage(new Uint8Array(4096),()=>{})).rejects.toThrow('unavailable');
+});
+test('late endpoint reset cannot continue after its timeout', async()=>{
+  const usb=new Usb(),c=session(usb),calls:string[]=[];
+  let release!:()=>void;
+  usb.clearHalt=async(direction)=>{calls.push(direction);await new Promise<void>(resolve=>{release=resolve;});};
+  usb.controlTransferOut=async()=>{calls.push('ROM reset');return{status:'ok',bytesWritten:0};};
+  await expect(c.prepareRead()).rejects.toThrow('reset clear halt IN: transfer timed out');
+  release();await Bun.sleep(20);
+  expect(calls).toEqual(['in']);
+  expect(usb.packets).toHaveLength(0);
+  await expect(c.prepareRead()).rejects.toThrow('unavailable');
+},10000);
+test('USB failure identifies the command and acknowledgement stage without retrying it', async()=>{
+  const usb=new Usb(),c=session(usb);
+  usb.transferIn=async()=>{throw new Error('A transfer error has occurred.');};
+  await expect(c.prepareRead()).rejects.toThrow('0x01 acknowledgement IN: A transfer error');
+  expect(usb.packets).toHaveLength(1);
+  await expect(c.readImage(4096,()=>{})).rejects.toThrow('unavailable');
 });

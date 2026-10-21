@@ -10,6 +10,7 @@ export type PicobootDevice = {
   configuration: {interfaces: {interfaceNumber: number; alternates: Alternate[]}[]};
   open(): Promise<void>; close(): Promise<void>; selectConfiguration(value: number): Promise<void>;
   claimInterface(value: number): Promise<void>; selectAlternateInterface(iface: number, alternate: number): Promise<void>;
+  clearHalt(direction: 'in' | 'out', endpoint: number): Promise<void>;
   controlTransferOut(setup: Control, bytes: Uint8Array): Promise<{status: string}>;
   controlTransferIn(setup: Control, length: number): Promise<{status: string; data: DataView}>;
   transferOut(endpoint: number, bytes: Uint8Array): Promise<{status: string; bytesWritten: number}>;
@@ -70,26 +71,38 @@ export class Picoboot {
   private failed = false;
   private busy = false;
   constructor(readonly device: PicobootDevice, private iface: number, private incoming: number, private outgoing: number) {}
-  private async operation<T>(work: () => Promise<T>): Promise<T> {
+  private async operation<T>(context: () => string, work: () => Promise<T>): Promise<T> {
     if (this.failed || this.busy) throw new Error('PICOBOOT session unavailable; no automatic retry.');
     this.busy = true; let timer: ReturnType<typeof setTimeout>;
     try {
       return await Promise.race([work(), new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error('PICOBOOT transfer timed out; outcome uncertain.')), 8000);
+        timer = setTimeout(() => reject(new Error('transfer timed out; outcome uncertain.')), 8000);
       })]);
-    } catch (error) {this.failed = true; throw error;}
+    } catch (error) {this.failed = true; throw new Error(`PICOBOOT ${context()}: ${(error as Error).message}`);}
     finally {clearTimeout(timer!); this.busy = false;}
   }
   async resetInterface() {
-    await this.operation(async () => {
+    let stage = 'reset clear halt IN';
+    await this.operation(() => stage, async () => {
+      // Clear host endpoint state before the ROM reset, as picotool does for
+      // halted endpoints. WebUSB clearHalt also resets the host data toggle.
+      console.info('PICOBOOT reset: clearing bulk endpoint state');
+      await this.device.clearHalt('in', this.incoming);
+      if (this.failed) throw new Error('Session failed; reset stopped.');
+      stage = 'reset clear halt OUT';
+      await this.device.clearHalt('out', this.outgoing);
+      if (this.failed) throw new Error('Session failed; reset stopped.');
+      stage = 'reset control OUT';
       console.info('PICOBOOT reset: sending vendor control OUT');
       const reply = await this.device.controlTransferOut({requestType:'vendor', recipient:'interface', request:0x41, value:0, index:this.iface}, new Uint8Array());
+      if (this.failed) throw new Error('Session failed; reset stopped.');
       if (reply.status !== 'ok') throw new Error('PICOBOOT interface reset failed.');
       console.info('PICOBOOT reset: complete');
     });
   }
   async command(code: number, args: Uint8Array, length: number, output: Uint8Array) {
-    return this.operation(async () => {
+    let stage = 'command OUT';
+    return this.operation(() => `0x${code.toString(16).padStart(2, '0')} ${stage}`, async () => {
       const packet = new Uint8Array(32), view = new DataView(packet.buffer), token = ++this.token;
       view.setUint32(0, 0x431fd10b, true); view.setUint32(4, token, true);
       packet[8] = code; packet[9] = args.length; view.setUint32(12, length, true); packet.set(args, 16);
@@ -110,15 +123,19 @@ export class Picoboot {
       let result = new Uint8Array();
       if (length) {
         if (code & 0x80) {
+          stage = 'payload IN';
           result = await receive(length);
           if (result.length !== length) throw new Error('PICOBOOT short read.');
-        } else await send(output);
+        } else {stage = 'payload OUT'; await send(output);}
       }
       // Raspberry Pi picotool sends a one-byte OUT transfer to acknowledge reads;
       // other commands acknowledge with a zero-length IN packet (max length1).
+      stage = code & 0x80 ? 'acknowledgement OUT' : 'acknowledgement IN';
       if (code & 0x80) await send(new Uint8Array(1));
       else if ((await receive(1)).length !== 0) throw new Error('Invalid PICOBOOT acknowledgement.');
+      stage = 'status control IN';
       const status = await this.device.controlTransferIn({requestType:'vendor', recipient:'interface', request:0x42, value:0, index:this.iface}, 16);
+      if (this.failed) throw new Error('Session failed; command stopped.');
       if (status.status !== 'ok' || status.data.byteLength !== 16 || status.data.getUint32(0,true) !== token ||
           status.data.getUint32(4,true) !== 0 || status.data.getUint8(8) !== code || status.data.getUint8(9) !== 0)
         throw new Error('PICOBOOT command status mismatch/failure.');
@@ -163,13 +180,15 @@ export class Picoboot {
   async reboot() {
     const args = new Uint8Array(12); new DataView(args.buffer).setUint32(8, 500, true);
     // Reboot disconnects USB; ACK is enough, status may race the disconnect.
-    await this.operation(async () => {
+    let stage = 'command OUT';
+    await this.operation(() => `0x02 ${stage}`, async () => {
       const packet = new Uint8Array(32), view = new DataView(packet.buffer);
       view.setUint32(0, 0x431fd10b, true); view.setUint32(4, ++this.token, true);
       packet[8] = 2; packet[9] = 12; packet.set(args,16);
       const sent = await this.device.transferOut(this.outgoing,packet);
       if (this.failed) throw new Error('PICOBOOT session failed; reboot outcome uncertain.');
       if(sent.status !== 'ok' || sent.bytesWritten !== 32) throw new Error('Reboot command failed.');
+      stage = 'acknowledgement IN';
       const ack = await this.device.transferIn(this.incoming,1);
       if (this.failed) throw new Error('PICOBOOT session failed; reboot outcome uncertain.');
       if(ack.status !== 'ok' || ack.data.byteLength !== 0) throw new Error('Reboot acknowledgement failed.');

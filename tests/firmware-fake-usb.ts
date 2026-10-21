@@ -19,6 +19,9 @@ export class FirmwareFakeUSB implements PicobootDevice {
   async selectAlternateInterface(iface: number, alternate: number) {
     if (iface !== 1 || alternate !== 0) throw new Error('Bad simulated alternate.');
   }
+  async clearHalt(direction: 'in' | 'out', endpoint: number) {
+    if (endpoint !== (direction === 'in' ? 4 : 3)) throw new Error('Bad simulated bulk endpoint.');
+  }
   async controlTransferOut() {return {status: 'ok', bytesWritten: 0};}
   async controlTransferIn() {
     const bytes = new Uint8Array(16), view = new DataView(bytes.buffer);
