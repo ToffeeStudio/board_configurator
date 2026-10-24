@@ -2,13 +2,13 @@
   {
     "id": "normal",
     "name": "Normal · 940 mA",
-    "description": "Lighting v3: 45 front modes and independent badge animations. Profile9, front/badge 200/255, saved lighting and 1s dark + 1s fade. Flashed with protocol/settings verification on 15 October; physical effect checks pending.",
-    "profile": 9,
+    "description": "Profile11: current estimate tuned for repaired PCB-B and validated with 100 further lighting profiles. Retains the 940 mA estimate limit, lighting v3, saved settings, startup fade and front/badge 200/255.",
+    "profile": 11,
     "lightingProtocol": 3,
     "mode": "normal",
     "testBuild": null,
     "file": "normal.uf2",
-    "sha256": "ecf6ed3af92a1b6bc4d2afd595bbff03bffa9202f5409fae9df18c270ff9f03b"
+    "sha256": "9e6fb89eddff1eb5ea8946f72d2afc6f0f2e62c2b5f59a3b67837e79fff42e26"
   },
   {
     "id": "manual",
@@ -24,12 +24,12 @@
   {
     "id": "current-unlimited",
     "name": "Normal · no current limit",
-    "description": "Lighting v3/profile10. Normal saves, animations, startup fade and front/badge 200/255 retained. Current estimate only; saved high output returns after restart. Not yet flashed.",
-    "profile": 10,
+    "description": "Profile12: the same repaired-PCB-B estimate with current limiting disabled. Lighting v3, saves, startup fade and front/badge 200/255 retained. Saved high output returns after restart. Built and tested offline; not physically flashed.",
+    "profile": 12,
     "lightingProtocol": 3,
     "mode": "current-unlimited",
     "testBuild": null,
     "file": "current-unlimited.uf2",
-    "sha256": "cc051f75779f2b3aaf880698b7967337229bc065a97728fb954625848bb5c969"
+    "sha256": "f10bc3069abcba552a4e56ecafbf31d261cc613aca8e5efac1f05049dd99b45d"
   }
 ]

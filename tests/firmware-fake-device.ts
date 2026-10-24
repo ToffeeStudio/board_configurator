@@ -2,7 +2,8 @@
 export class FirmwareFakeDevice extends EventTarget {
   vendorId = 0x1067; productId = 0x626d;
   collections = [{usagePage: 0xff60, usage: 0x61}];
-  opened = true; profile = 9; mode = 'normal'; build = 0x26101002;
+  opened = true; profile = 11; mode = 'normal'; build = 0x26101002;
+  baseMa = 75;
   lightingProtocol = 3;
   packets: number[][] = []; booted = false; timeout = false; badEcho = false; restarted = false;
   keymap = new Uint8Array(144).fill(7); macros = new Uint8Array(56).fill(5); layout = new Uint8Array([1, 2, 3, 4]);
@@ -20,7 +21,7 @@ export class FirmwareFakeDevice extends EventTarget {
       if (packet[1] === 0x88) {
         reply[1] = this.mode === 'manual' ? 1 : 2;
         reply[2] = 1 | 4 | 16 | (this.mode === 'manual' ? 32 : this.mode === 'current-unlimited' ? 64 : 0);
-        [this.profile, 10, 5, 940, 103, 0, 1000, this.mode === 'normal' ? 800 : 950, 1000, 1000, 837]
+        [this.profile, 10, 5, 940, this.baseMa, 0, 1000, this.mode === 'normal' ? 800 : 950, 1000, 1000, 940 - this.baseMa]
           .forEach((v, i) => view.setUint16(3 + i * 2, v, true));
         reply[25] = reply[1] === 2 ? 200 : 0;
       } else if (packet[1] === 0x86) {reply[1] = 1; view.setUint32(9, this.build, true);}

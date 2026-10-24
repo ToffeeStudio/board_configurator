@@ -7,7 +7,7 @@ const manifest: FirmwareChoice[] = JSON.parse(readFileSync('firmware-downloads/m
 const connection = (device: FirmwareFakeDevice) => new FirmwareConnection(device as unknown as HIDDevice);
 test('all three complete bundled UF2s match their release hashes', async () => {
   for (const entry of manifest) await validateFirmware(new Uint8Array(readFileSync('firmware-downloads/' + entry.file)), entry.sha256);
-  expect(manifest.map(v => v.profile)).toEqual([9, 0x8006, 10]);
+  expect(manifest.map(v => v.profile)).toEqual([11, 0x8006, 12]);
 });
 test('truncation, invalid blocks and changed image hashes fail closed', async () => {
   const image = new Uint8Array(readFileSync('firmware-downloads/normal.uf2'));
@@ -58,13 +58,18 @@ test('profile or mode mismatch prevents verification/restoration', async () => {
     expect(device.packets.some(p => [3, 0x13, 0x0f].includes(p[0]))).toBe(false);
   }
 });
-test('normal-unlimited reports actual uncapped estimate without claiming manual test mode', async () => {
-  const device = new FirmwareFakeDevice(); device.mode = 'current-unlimited'; device.profile = 10;
-  const value = await new ToffeeLightingAPI(new ToffeeHIDDevice(device as unknown as HIDDevice)).getPowerStatus();
-  expect(value.currentUnlimited).toBe(true); expect(value.manualMeasurement).toBe(false);
-  expect(value.frontBadgeMax).toBe(200); expect(value.effectiveLedMa).toBeGreaterThan(value.ledBudgetMa);
-  device.profile = 9;
-  await expect(new ToffeeLightingAPI(new ToffeeHIDDevice(device as unknown as HIDDevice)).getPowerStatus()).rejects.toThrow('Inconsistent');
+test('released profile12 and recovery profile10 accept uncapped estimates; normal profiles cannot claim unlimited mode', async () => {
+  for (const [profile, baseMa] of [[10, 103], [12, 75]]) {
+    const device = new FirmwareFakeDevice(); device.mode = 'current-unlimited'; device.profile = profile; device.baseMa = baseMa;
+    const value = await new ToffeeLightingAPI(new ToffeeHIDDevice(device as unknown as HIDDevice)).getPowerStatus();
+    expect(value.currentUnlimited).toBe(true); expect(value.manualMeasurement).toBe(false);
+    expect(value.modelRevision).toBe(profile); expect(value.baseMa).toBe(baseMa);
+    expect(value.frontBadgeMax).toBe(200); expect(value.effectiveLedMa).toBeGreaterThan(value.ledBudgetMa);
+  }
+  for (const profile of [9, 11, 13]) {
+    const device = new FirmwareFakeDevice(); device.mode = 'current-unlimited'; device.profile = profile;
+    await expect(new ToffeeLightingAPI(new ToffeeHIDDevice(device as unknown as HIDDevice)).getPowerStatus()).rejects.toThrow('Inconsistent');
+  }
 });
 test('old normal firmware cannot masquerade as the new animation build', async () => {
   const device = new FirmwareFakeDevice(); device.lightingProtocol = 2;
@@ -74,7 +79,7 @@ test('old normal firmware cannot masquerade as the new animation build', async (
 test('wrong manual build and mid-verification restart are rejected', async () => {
   const device = new FirmwareFakeDevice(); device.mode = 'manual'; device.profile = 0x8006; device.build = 0;
   await expect(connection(device).verify(manifest[1])).rejects.toThrow('Wrong manual test build');
-  device.mode = 'normal'; device.profile = 9; device.restarted = true;
+  device.mode = 'normal'; device.profile = 11; device.restarted = true;
   await expect(connection(device).verify(manifest[0])).rejects.toThrow('restarted');
 });
 test('settings recovery rereads and repairs interruption after first/middle/last keymap chunk', async () => {

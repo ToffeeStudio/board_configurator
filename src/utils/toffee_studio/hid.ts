@@ -281,7 +281,7 @@ export class ToffeeLightingAPI {
     const budget = value.configured ? Math.max(0, value.boardLimitMa - value.baseMa - value.marginMa) : 0;
     if (value.limitPermille > 1000 || value.startupPermille > 1000 || value.ledBudgetMa !== budget ||
         (!value.manualMeasurement && !value.currentUnlimited && value.effectiveLedMa > budget) || value.effectiveLedMa > value.requestedLedMa ||
-        (value.currentUnlimited && (value.modelRevision !== 10 || value.frontBadgeMax !== 200 || value.limited || value.limitPermille !== 1000)) ||
+        (value.currentUnlimited && (![10, 12].includes(value.modelRevision) || value.frontBadgeMax !== 200 || value.limited || value.limitPermille !== 1000)) ||
         (value.manualMeasurement && (!value.configured || value.modelRevision < 0x8000 || value.limited || value.limitPermille !== 1000)))
       throw new Error('Inconsistent current telemetry; no budget reading accepted.');
     return value;

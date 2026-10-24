@@ -5,15 +5,20 @@ the intended Module. Unlimited variants can overload the board: watch the
 physical meter. The 940 mA limit is an ESTIMATE, not an onboard current sensor.
 
 Choices:
-The two normal variants include lighting-v3:45 front options and independent
-badge animations. Normal profile9 was flashed with protocol/settings checks on
-15 October; physical effect/cold-power checks remain pending. Profile10 has not
-been physically flashed. The manual measurement image is unchanged.
-normal.uf2: normal profile9, 940 mA estimate limit, front/badge rescaled to200,
+The two normal variants use the current estimate fitted specifically to repaired
+PCB-B:75 mA baseline and nine RGB coefficients. This is not a universal A/B fit.
+They include lighting-v3:45 front options and independent badge animations.
+Normal profile11 was flashed on22 October, then validated against100 additional
+held lighting profiles (500 manually read meter photos; mean absolute error
+16.10 mA). Controlled interrupted-update recovery, settings and reconnect checks
+passed. Physical cold-power, sleep/wake and electrical/thermal checks remain open.
+Current-unlimited profile12 was built/tested offline and has not been physically
+flashed. The manual measurement image is unchanged.
+normal.uf2: normal profile11, 940 mA estimate limit, front/badge rescaled to200,
   normal saves and 1-second dark startup followed by 1-second fade.
 manual.uf2: manual build0x26101002/profile0x8006; no output/current cap or timeout,
   starts dark, test changes not saved, older informational estimator.
-current-unlimited.uf2: normal profile10, current limit removed ONLY; keeps
+current-unlimited.uf2: normal profile12, current limit removed ONLY; keeps
   front/badge200, normal saves and startup. Saved high output can return!
 
 Browser:
@@ -25,8 +30,9 @@ or Python installation is needed. A reconnect permission may be required.
 Recovery settings and original affected sectors are stored in this browser's
 IndexedDB, never uploaded. Download them optionally; clearing site data removes
 them. They are not a full-device dump. Failed backup prevents writing; uncertain
-writes are not retried automatically. The integrated19 October workflow is
-tested with simulated devices; the transport was physically verified12 October.
+writes are not retried automatically. Actual browser recovery on22 October
+completed after early, halfway and near-end software USB interruptions, including
+reconnect/settings verification. Those tests did not remove electrical power.
 Physical boot/reset can enter bootloader if application HID is unresponsive.
 Do not confuse firmware download or bootloader entry with a completed flash.
 
@@ -62,10 +68,10 @@ On a copy failure STOP: don't loop/retry writes blindly. Keep the recovery copy.
 SHA256 values are in manifest.json. GPL license is included. Complete firmware
 source is available in https://github.com/ToffeeStudio/qmk_firmware on the
 screenless-pcb branch. Exact corresponding source checkpoints:
-  normal.uf2: 03d5cb1c3f
+  normal.uf2: 9e3b5087f9
   manual.uf2: 5b96a707636bb8ec70a2ba831da1b6eec382d7c6
-  current-unlimited.uf2: 03d5cb1c3f
-  bundled Python updater: d94f43ae6e9c712c8f6e77a9ef8ed03f5469a9bf
+  current-unlimited.uf2: 9e3b5087f9
+  bundled Python updater: 9e3b5087f9
 The matching source checkpoints must be available on screenless-pcb before
 publishing these binaries. Private settings and recovery images are not bundled.
 

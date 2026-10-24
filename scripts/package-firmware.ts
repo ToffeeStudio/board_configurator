@@ -9,9 +9,9 @@ if (!normal || !manual || !unlimited || !firmwareRoot || !output)
 if (existsSync(output)) throw new Error('Output directory already exists; never replace a release.');
 mkdirSync(output, {recursive: true});
 const variants = [
-  {id: 'normal', name: 'Normal · 940 mA', description: 'Lighting v3: 45 front modes and independent badge animations. Profile9, front/badge 200/255, saved lighting and 1s dark + 1s fade. Flashed with protocol/settings verification on 15 October; physical effect checks pending.', source: normal, profile: 9, lightingProtocol: 3, mode: 'normal', testBuild: null},
+  {id: 'normal', name: 'Normal · 940 mA', description: 'Profile11: current estimate tuned for repaired PCB-B and validated with 100 further lighting profiles. Retains the 940 mA estimate limit, lighting v3, saved settings, startup fade and front/badge 200/255.', source: normal, profile: 11, lightingProtocol: 3, mode: 'normal', testBuild: null},
   {id: 'manual', name: 'Unlimited measurement test', description: 'Build 0x26101002. Exact 0–255 output, no current limiter or timeout, starts dark, test lighting not saved. Uses the older informational estimator.', source: manual, profile: 0x8006, lightingProtocol: 2, mode: 'manual', testBuild: 0x26101002},
-  {id: 'current-unlimited', name: 'Normal · no current limit', description: 'Lighting v3/profile10. Normal saves, animations, startup fade and front/badge 200/255 retained. Current estimate only; saved high output returns after restart. Not yet flashed.', source: unlimited, profile: 10, lightingProtocol: 3, mode: 'current-unlimited', testBuild: null},
+  {id: 'current-unlimited', name: 'Normal · no current limit', description: 'Profile12: the same repaired-PCB-B estimate with current limiting disabled. Lighting v3, saves, startup fade and front/badge 200/255 retained. Saved high output returns after restart. Built and tested offline; not physically flashed.', source: unlimited, profile: 12, lightingProtocol: 3, mode: 'current-unlimited', testBuild: null},
 ];
 const manifest = variants.map(({source, ...entry}) => {
   const data = readFileSync(source), file = entry.id + '.uf2';

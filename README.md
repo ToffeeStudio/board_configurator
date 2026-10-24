@@ -494,6 +494,17 @@ README lists exact corresponding GPL source commits and build flags. Publish
 the matching firmware source branch before distributing the downloads; until
 that push succeeds this catalogue remains local, not a published release.
 
+**25 October catalogue:** normal11 and current-unlimited12 use the current
+estimate fitted specifically to repaired PCB-B (75 mA baseline). Normal11 keeps
+the940 mA estimated-current limit and was physically validated with100 additional
+held lighting profiles; current-unlimited12 was built/tested offline and has not
+been physically flashed. Both retain lighting v3, front/badge200, saves and
+startup fade. The manual measurement image is unchanged. Corresponding source
+for both normal images is firmware commit`9e3b5087f9` on`screenless-pcb`; see the
+bundled README for build flags and measurement/qualification limits. The browser
+accepts profile12 telemetry while retaining profile10 support for saved recovery
+records. Downloading this catalogue does not itself flash a connected board.
+
 Updater tests: `bun test tests/firmware-update.test.ts`; visible fake-HID UI
 runner: `tests/firmware-update-browser.ts`. No automated physical flashing
 occurs in either. Existing checklist/browser measurements remain unchanged.
