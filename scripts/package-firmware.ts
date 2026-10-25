@@ -9,9 +9,9 @@ if (!normal || !manual || !unlimited || !firmwareRoot || !output)
 if (existsSync(output)) throw new Error('Output directory already exists; never replace a release.');
 mkdirSync(output, {recursive: true});
 const variants = [
-  {id: 'normal', name: 'Normal · 940 mA', description: 'Profile13: repaired-PCB-B current estimate with front/badge output capped at 190/255. Keeps the 940 mA estimate limit, lighting v3, saved settings and startup fade.', source: normal, profile: 13, lightingProtocol: 3, mode: 'normal', testBuild: null},
+  {id: 'normal', name: 'Normal · 940 mA', description: 'Profile13: repaired-PCB-B current estimate with front/badge output capped at 190/255. Keeps the 940 mA estimate limit, lighting v3, saved settings and startup fade. Hold both physical Shift keys at startup to save all lighting brightness at zero.', source: normal, profile: 13, lightingProtocol: 3, mode: 'normal', testBuild: null},
   {id: 'manual', name: 'Unlimited measurement test', description: 'Build 0x26101002. Exact 0–255 output, no current limiter or timeout, starts dark, test lighting not saved. Uses the older informational estimator.', source: manual, profile: 0x8006, lightingProtocol: 2, mode: 'manual', testBuild: 0x26101002},
-  {id: 'current-unlimited', name: 'Normal · no current limit', description: 'Profile14: the same repaired-PCB-B estimate with current limiting disabled and front/badge output capped at 190/255. Lighting v3, saves and startup fade retained. Saved high output returns after restart. Not physically flashed.', source: unlimited, profile: 14, lightingProtocol: 3, mode: 'current-unlimited', testBuild: null},
+  {id: 'current-unlimited', name: 'Normal · no current limit', description: 'Profile14: the same repaired-PCB-B estimate with current limiting disabled and front/badge output capped at 190/255. Lighting v3, saves and startup fade retained. Hold both physical Shift keys at startup to save all lighting brightness at zero. Saved high output returns after ordinary restart. Not physically flashed.', source: unlimited, profile: 14, lightingProtocol: 3, mode: 'current-unlimited', testBuild: null},
 ];
 const manifest = variants.map(({source, ...entry}) => {
   const data = readFileSync(source), file = entry.id + '.uf2';

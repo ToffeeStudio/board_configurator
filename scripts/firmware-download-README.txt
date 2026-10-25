@@ -15,6 +15,13 @@ passed. Physical cold-power, sleep/wake and electrical/thermal checks remain ope
 The current profiles13/14 lower the shared front/badge output cap from200 to190
 at Ethan's request, with the same estimator coefficients and940mA normal limit.
 Both new images are build/host-tested; no new physical flash was performed.
+Both normal variants now also support a firmware-level lighting reset: hold
+both physical Shift switches before plugging in. All three brightness settings
+are saved as zero before lighting starts; colours/effects, per-key overrides,
+VIA keymaps and macros are preserved. VIA remapping cannot disable this chord.
+Hold Escape at startup for the existing EEPROM reset and bootloader entry.
+The new Shift shortcut needs intact running application firmware; interrupted
+firmware flashing still uses the separate bootloader recovery procedure below.
 The manual measurement image is unchanged.
 normal.uf2: normal profile13, 940 mA estimate limit, front/badge rescaled to190,
   normal saves and 1-second dark startup followed by 1-second fade.
@@ -70,10 +77,10 @@ On a copy failure STOP: don't loop/retry writes blindly. Keep the recovery copy.
 SHA256 values are in manifest.json. GPL license is included. Complete firmware
 source is available in https://github.com/ToffeeStudio/qmk_firmware on the
 screenless-pcb branch. Exact corresponding source checkpoints:
-  normal.uf2: bbbddd274ce360d05e62fbc52fc3558e881198d5
+  normal.uf2: e66f75d5c902a183141da26d86e0f4f777a63653
   manual.uf2: 5b96a707636bb8ec70a2ba831da1b6eec382d7c6
-  current-unlimited.uf2: bbbddd274ce360d05e62fbc52fc3558e881198d5
-  bundled Python updater: bbbddd274ce360d05e62fbc52fc3558e881198d5
+  current-unlimited.uf2: e66f75d5c902a183141da26d86e0f4f777a63653
+  bundled Python updater: e66f75d5c902a183141da26d86e0f4f777a63653
 The matching source checkpoints must be available on screenless-pcb before
 publishing these binaries. Private settings and recovery images are not bundled.
 

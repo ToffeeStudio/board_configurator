@@ -2,13 +2,13 @@
   {
     "id": "normal",
     "name": "Normal · 940 mA",
-    "description": "Profile13: repaired-PCB-B current estimate with front/badge output capped at 190/255. Keeps the 940 mA estimate limit, lighting v3, saved settings and startup fade.",
+    "description": "Profile13: repaired-PCB-B current estimate with front/badge output capped at 190/255. Keeps the 940 mA estimate limit, lighting v3, saved settings and startup fade. Hold both physical Shift keys at startup to save all lighting brightness at zero.",
     "profile": 13,
     "lightingProtocol": 3,
     "mode": "normal",
     "testBuild": null,
     "file": "normal.uf2",
-    "sha256": "cb3080e781f934448bba97696a981eab327e2727d9340189296b29aeb43868b1"
+    "sha256": "3166a155e2a37b6dc3bf67a1ddff3467aa4bc100a0eca08b659963734a17bd94"
   },
   {
     "id": "manual",
@@ -24,12 +24,12 @@
   {
     "id": "current-unlimited",
     "name": "Normal · no current limit",
-    "description": "Profile14: the same repaired-PCB-B estimate with current limiting disabled and front/badge output capped at 190/255. Lighting v3, saves and startup fade retained. Saved high output returns after restart. Not physically flashed.",
+    "description": "Profile14: the same repaired-PCB-B estimate with current limiting disabled and front/badge output capped at 190/255. Lighting v3, saves and startup fade retained. Hold both physical Shift keys at startup to save all lighting brightness at zero. Saved high output returns after ordinary restart. Not physically flashed.",
     "profile": 14,
     "lightingProtocol": 3,
     "mode": "current-unlimited",
     "testBuild": null,
     "file": "current-unlimited.uf2",
-    "sha256": "8b2a3dfa57f773c4b926be68ceeabc509fc504997503d41a56ddfb439c5a52fe"
+    "sha256": "15fbb706b3814614716d7862e076a8785ac4bd438d2cbc51f4155c819b7b8a12"
   }
 ]

@@ -83,10 +83,9 @@ function PowerDebugContent({device}: {device: HIDDevice | null}) {
     </button>
     {enabled && <div style={{border: '1px solid #7153a4', borderRadius: 8, padding: '12px 16px', marginTop: 8}}>
       <strong>Lighting current · firmware estimate</strong>
-      <p style={{margin: '6px 0'}}>Not a live meter reading. {status?.manualMeasurement
+      {unlimited && <p style={{margin: '6px 0'}}>{status?.manualMeasurement
         ? 'LIMITER DISABLED — manual measurement firmware. The displayed budget is informational only.'
-        : status?.currentUnlimited ? 'CURRENT LIMITER DISABLED — normal saves and front/badge output caps remain. Budget is informational only.'
-        : 'Normal firmware enforces its budget even when Debug is closed.'}</p>
+        : 'CURRENT LIMITER DISABLED — normal saves and front/badge output caps remain. Budget is informational only.'}</p>}
       {!api ? <p>Connect and select your board.</p>
         : error ? <div role="alert"><p>{error}</p><button onClick={() => setRetry(value => value + 1)}>Retry debug</button></div>
         : !status ? <p>Reading firmware power status…</p>
@@ -103,20 +102,23 @@ function PowerDebugContent({device}: {device: HIDDevice | null}) {
                 <span>Budget used: <b data-testid="power-usage">{usage === null ? 'Unavailable' : `${usage}%`}</b></span>
                 <span>Limiter: <b>{unlimited ? 'DISABLED' : `${((1000 - status.limitPermille) / 10).toFixed(1)}% dimming`}</b></span>
               </div>
-              {status.frontBadgeMax !== null && <p data-testid="power-output-caps" style={{margin: '6px 0'}}>
+              {status.frontBadgeMax !== null && <p data-testid="power-output-caps" style={{margin: '6px 0', fontSize: 12}}>
                 Firmware output range: front 0–{status.frontBadgeMax}/255 · rear 0–255/255 · badge 0–{status.frontBadgeMax}/255.
                 {' '}Front/badge RGB is rescaled before current limiting; slider and saved values stay 0–255.
               </p>}
               {usage !== null && <progress aria-label="Estimated LED budget used" max={100} value={usage} style={{width: '100%'}}/>}
-              <p style={{margin: '6px 0'}}>{unlimited
-                ? usage !== null && usage > 100 ? 'Above informational allowance — output is NOT being reduced.' : 'Reference only — output is NOT current-limited.'
+              <p data-testid="power-budget-status" style={{margin: '6px 0'}}>{unlimited
+                ? 'Limiter disabled'
                 : status.configured
-                ? status.limited ? 'Limiting active — saved slider preferences are unchanged.' : 'Within configured budget.'
-                : 'Reference estimates only; no validated operating ceiling.'}
-                {status.startupActive && ` Startup output: ${(status.startupPermille / 10).toFixed(1)}%.`}</p>
+                ? status.limited ? 'Limiting active' : 'Within'
+                : 'Budget not configured'}</p>
             </>}
           <small>Model {status.modelRevision} · base {status.baseMa} mA · margin {status.marginMa} mA · {unlimited ? 'reference board ceiling (not enforced)' : 'board ceiling'} {status.configured ? `${status.boardLimitMa} mA` : 'not set'} · frame {status.frame}, {status.ageMs} ms old at reply</small>
         </>}
+      <ul aria-label="Firmware startup recovery" style={{margin: '8px 0 0', paddingLeft: 20, fontSize: 12}}>
+        <li>Hold both Shift keys while plugging in to reset all lighting brightness to zero (updated normal firmware).</li>
+        <li>Hold Escape while plugging in to reset EEPROM and enter the bootloader.</li>
+      </ul>
     </div>}
   </section>;
 }

@@ -20,7 +20,7 @@ class FixtureDevice extends EventTarget {
   manual = false;
   currentUnlimited = false;
   schema = 2;
-  frontBadgeMax = 200;
+  frontBadgeMax = 190;
   stale = false;
   frame = 0;
   async open() {this.opened = true;}
@@ -43,7 +43,7 @@ class FixtureDevice extends EventTarget {
         reply[25] = reply[1] === 2 ? this.frontBadgeMax : 0;
         reply[2] = (this.unconfigured ? 0 : 1) | (effective < requested ? 2 : 0) | 4 | 16 | (this.manual ? 32 : this.currentUnlimited ? 64 : 0);
         const scale = this.unconfigured ? 0 : this.manual || this.currentUnlimited ? 1000 : requested ? Math.min(1000, Math.floor(225000 / requested)) : 1000;
-        const fields = [this.manual ? 0x8006 : this.currentUnlimited ? 10 : 42, ++this.frame, this.stale ? 3000 : 0, this.unconfigured ? 0 : 350,
+        const fields = [this.manual ? 0x8006 : this.currentUnlimited ? 14 : 42, ++this.frame, this.stale ? 3000 : 0, this.unconfigured ? 0 : 350,
           90, 35, requested, effective, scale, 1000, this.unconfigured ? 0 : 225];
         const view = new DataView(reply.buffer);
         fields.forEach((value, index) => view.setUint16(3 + index * 2, value, true));

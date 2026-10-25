@@ -35,14 +35,23 @@ try {
   await page.getByTestId('power-requested').filter({hasText: '0 mA'}).waitFor();
   assert.equal((await counts()).writes, 0);
   check('Debug reads telemetry without any lighting setter');
-  await page.getByTestId('power-output-caps').filter({hasText: 'front 0–200/255 · rear 0–255/255 · badge 0–200/255'}).waitFor();
+  await page.getByTestId('power-output-caps').filter({hasText: 'front 0–190/255 · rear 0–255/255 · badge 0–190/255'}).waitFor();
+  assert.equal(await page.getByTestId('power-output-caps').evaluate((element: Element) => getComputedStyle(element).fontSize), '12px');
+  assert.equal(await page.getByText('Not a live meter reading.', {exact: false}).count(), 0);
+  assert.equal(await page.getByText('Normal firmware enforces its budget', {exact: false}).count(), 0);
+  assert.equal(await page.getByTestId('power-budget-status').innerText(), 'Within');
+  assert.deepEqual(await page.getByRole('list', {name: 'Firmware startup recovery'}).locator('li').allTextContents(), [
+    'Hold both Shift keys while plugging in to reset all lighting brightness to zero (updated normal firmware).',
+    'Hold Escape while plugging in to reset EEPROM and enter the bootloader.',
+  ]);
+  check('Compact range, exact budget status, and two startup recovery bullets; meter disclaimer removed');
   await set({frontBadgeMax: 150});
   await page.getByTestId('power-output-caps').filter({hasText: 'front 0–150/255'}).waitFor();
   assert.equal((await counts()).writes, 0);
   await set({schema: 1});
   await page.getByTestId('power-output-caps').waitFor({state: 'detached'});
-  await set({schema: 2, frontBadgeMax: 200});
-  await page.getByTestId('power-output-caps').filter({hasText: 'front 0–200/255'}).waitFor();
+  await set({schema: 2, frontBadgeMax: 190});
+  await page.getByTestId('power-output-caps').filter({hasText: 'front 0–190/255'}).waitFor();
   check('Debug reads output maxima from firmware, never guesses on v1 and never writes a cap');
   const slider = page.getByRole('slider', {name: 'Fixture brightness'});
   await slider.focus(); await slider.press('End');
@@ -55,18 +64,18 @@ try {
   await page.screenshot({path: screenshotPath, fullPage: true});
   const beforeManual = await counts();
   await set({manual: true});
-  await page.getByText('LIMITER DISABLED', {exact: false}).waitFor();
-  await page.getByText('Above informational allowance', {exact: false}).waitFor();
+  await page.getByText('LIMITER DISABLED — manual measurement firmware.', {exact: false}).waitFor();
+  await page.getByTestId('power-budget-status').filter({hasText: 'Limiter disabled'}).waitFor();
   assert.equal(await page.getByTestId('power-effective').innerText(), '765 mA');
   assert.equal(await page.getByTestId('power-usage').innerText(), '340%');
-  assert.equal(await page.getByText('Within configured budget.', {exact: true}).count(), 0);
+  assert.equal(await page.getByTestId('power-budget-status').innerText(), 'Limiter disabled');
   assert.equal((await counts()).writes, beforeManual.writes);
   assert.equal(await page.getByTestId('power-output-caps').count(), 0);
   await page.screenshot({path: screenshotPath + '.manual.png', fullPage: true});
   check('Manual firmware shows limiter disabled and over-reference output, without timeout claims or writes');
   await set({manual: false, currentUnlimited: true});
   await page.getByText('CURRENT LIMITER DISABLED', {exact: false}).waitFor();
-  await page.getByTestId('power-output-caps').filter({hasText: 'front 0–200/255'}).waitFor();
+  await page.getByTestId('power-output-caps').filter({hasText: 'front 0–190/255'}).waitFor();
   assert.equal(await page.getByTestId('power-effective').innerText(), '765 mA');
   assert.equal((await counts()).writes, beforeManual.writes);
   check('Normal current-unlimited is explicitly distinct from manual, retains cap reporting and does not claim enforcement');
@@ -78,7 +87,7 @@ try {
     const f = (window as any).powerFixture;
     return f.level > 0 && f.level < 75 && document.querySelector('[data-testid="power-requested"]')?.textContent === `${f.level * 3} mA`;
   });
-  await page.getByText('Within configured budget.', {exact: true}).waitFor();
+  await page.getByTestId('power-budget-status').filter({hasText: 'Within'}).waitFor();
   check('Mouse slider change refreshes the actual Debug component');
   await set({delay: 400});
   for (let n = 0; n < 15; n++) await slider.press('ArrowRight');
@@ -111,7 +120,7 @@ try {
   await set({stale: true}); await page.getByText('No fresh output estimate.', {exact: false}).waitFor();
   assert.equal(await page.getByTestId('power-requested').count(), 0);
   await set({stale: false, unconfigured: true});
-  await page.getByText('Budget not configured', {exact: false}).waitFor();
+  await page.getByTestId('power-budget-status').filter({hasText: 'Budget not configured'}).waitFor();
   assert.equal(await page.getByTestId('power-usage').innerText(), 'Unavailable');
   assert.equal(await page.getByTestId('power-effective').innerText(), '0 mA');
   check('Stale and unconfigured data never appear as a fresh validated budget');
