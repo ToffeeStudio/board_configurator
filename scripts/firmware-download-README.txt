@@ -8,18 +8,20 @@ Choices:
 The two normal variants use the current estimate fitted specifically to repaired
 PCB-B:75 mA baseline and nine RGB coefficients. This is not a universal A/B fit.
 They include lighting-v3:45 front options and independent badge animations.
-Normal profile11 was flashed on22 October, then validated against100 additional
+Earlier normal profile11 was flashed on22 October, then validated against100 additional
 held lighting profiles (500 manually read meter photos; mean absolute error
 16.10 mA). Controlled interrupted-update recovery, settings and reconnect checks
 passed. Physical cold-power, sleep/wake and electrical/thermal checks remain open.
-Current-unlimited profile12 was built/tested offline and has not been physically
-flashed. The manual measurement image is unchanged.
-normal.uf2: normal profile11, 940 mA estimate limit, front/badge rescaled to200,
+The current profiles13/14 lower the shared front/badge output cap from200 to190
+at Ethan's request, with the same estimator coefficients and940mA normal limit.
+Both new images are build/host-tested; no new physical flash was performed.
+The manual measurement image is unchanged.
+normal.uf2: normal profile13, 940 mA estimate limit, front/badge rescaled to190,
   normal saves and 1-second dark startup followed by 1-second fade.
 manual.uf2: manual build0x26101002/profile0x8006; no output/current cap or timeout,
   starts dark, test changes not saved, older informational estimator.
-current-unlimited.uf2: normal profile12, current limit removed ONLY; keeps
-  front/badge200, normal saves and startup. Saved high output can return!
+current-unlimited.uf2: normal profile14, current limit removed ONLY; keeps
+  front/badge190, normal saves and startup. Saved high output can return!
 
 Browser:
 Use desktop Chrome/Edge with WebHID and WebUSB on HTTPS or localhost. Choose a
@@ -68,10 +70,10 @@ On a copy failure STOP: don't loop/retry writes blindly. Keep the recovery copy.
 SHA256 values are in manifest.json. GPL license is included. Complete firmware
 source is available in https://github.com/ToffeeStudio/qmk_firmware on the
 screenless-pcb branch. Exact corresponding source checkpoints:
-  normal.uf2: 9e3b5087f9
+  normal.uf2: bbbddd274ce360d05e62fbc52fc3558e881198d5
   manual.uf2: 5b96a707636bb8ec70a2ba831da1b6eec382d7c6
-  current-unlimited.uf2: 9e3b5087f9
-  bundled Python updater: 9e3b5087f9
+  current-unlimited.uf2: bbbddd274ce360d05e62fbc52fc3558e881198d5
+  bundled Python updater: bbbddd274ce360d05e62fbc52fc3558e881198d5
 The matching source checkpoints must be available on screenless-pcb before
 publishing these binaries. Private settings and recovery images are not bundled.
 

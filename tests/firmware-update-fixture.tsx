@@ -17,7 +17,7 @@ const usb = new FirmwareFakeUSB(() => {
   device.booted = false;
   device.keymap.fill(0);
   device.mode = (document.querySelector('select[aria-label="Firmware version"]') as HTMLSelectElement).value;
-  device.profile = {normal: 11, manual: 0x8006, 'current-unlimited': 12}[device.mode as 'normal'];
+  device.profile = {normal: 13, manual: 0x8006, 'current-unlimited': 14}[device.mode as 'normal'];
   device.lightingProtocol = device.mode === 'manual' ? 2 : 3;
 });
 usb.corruptReadback = scenario === 'readback-failure';

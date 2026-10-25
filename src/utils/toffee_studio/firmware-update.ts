@@ -149,7 +149,9 @@ export class FirmwareConnection {
     const power = await new ToffeeLightingAPI(hid).getPowerStatus();
     if (power.modelRevision !== choice.profile || power.manualMeasurement !== (choice.mode === 'manual') ||
         power.currentUnlimited !== (choice.mode === 'current-unlimited') ||
-        (choice.mode !== 'manual' && power.frontBadgeMax !== 200))
+        (choice.mode !== 'manual' && !(
+          [9, 10, 11, 12].includes(choice.profile) && power.frontBadgeMax === 200 ||
+          [13, 14].includes(choice.profile) && power.frontBadgeMax === 190)))
       throw new Error('Connected firmware does not match the selected profile/mode. No backup written.');
     if (choice.testBuild !== null) {
       const [status, data] = await hid.executeCommand(0x86 as CommandID);
