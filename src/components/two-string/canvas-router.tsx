@@ -192,7 +192,7 @@ export const CanvasRouter = () => {
   
   let overlayStyle: React.CSSProperties = { display: 'none' };
 
-  if (layoutStats && absoluteRect && !hideCanvasScene && !hideTerrainBG) {
+  if (path === '/' && layoutStats && absoluteRect && !hideCanvasScene && !hideTerrainBG) {
     const offsetX = 4 * layoutStats.ratio;
     const offsetY = -86 * layoutStats.ratio;
 
@@ -221,7 +221,7 @@ export const CanvasRouter = () => {
         style={{
           height: 430,
           width: '100%',
-          top: 50,
+          top: path === '/test' ? 0 : 50,
           transform: hideCanvasScene
             ? !hideTerrainBG
               ? 'translateY(-500px)'
@@ -246,13 +246,13 @@ export const CanvasRouter = () => {
               Tethered Controls (Layer + Badge) 
               Wrapped in a div to stop click propagation to the container background (which clears selection)
             */}
-            <div 
+            {path === '/' && <div
               style={{pointerEvents: 'all', position: 'absolute', top: 0, left: 0, width: '100%', height: 0, zIndex: 30}}
               onClick={(e) => e.stopPropagation()}
             >
               <LayerControl />
               <Badge />
-            </div>
+            </div>}
 
             <KeyboardBG
               onClick={terrainOnClick}

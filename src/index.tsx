@@ -1,7 +1,12 @@
 import '@webscopeio/react-textarea-autocomplete/style.css';
 import {createRoot} from 'react-dom/client';
 import './app.global.css';
-import {DEBUG_ENABLED, FIRMWARE_PATH} from './config/debug';
+import {DEBUG_ENABLED, FIRMWARE_PATH, KEY_TESTER_PATH} from './config/debug';
+
+// Static hosts may add a trailing slash to the tester's directory entry.
+if (window.location.pathname === KEY_TESTER_PATH + '/') {
+  window.history.replaceState(null, '', KEY_TESTER_PATH + window.location.search + window.location.hash);
+}
 
 const elem = document.getElementById('root');
 if (elem) {

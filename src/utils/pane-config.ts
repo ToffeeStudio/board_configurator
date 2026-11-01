@@ -17,7 +17,7 @@ import {DisplayPane} from '../components/panes/display';
 import {ErrorsPaneConfig} from '../components/panes/errors';
 import {ToffeeLighting} from '../components/panes/toffee-lighting';
 import {ToffeeDebug} from '../components/panes/toffee-debug';
-import {DEBUG_ENABLED, MEASUREMENT_PATH, FIRMWARE_PATH} from '../config/debug';
+import {DEBUG_ENABLED, MEASUREMENT_PATH, FIRMWARE_PATH, KEY_TESTER_PATH} from '../config/debug';
 import {FirmwareUpdate} from '../components/panes/firmware-update';
 
 export default [
@@ -28,13 +28,6 @@ export default [
     title: 'Configure',
     path: '/',
   },
-  // {
-  //   key: 'test',
-  //   component: Test,
-  //   icon: faStethoscope,
-  //   path: '/test',
-  //   title: 'Key Tester',
-  // },
   // {
   //   key: 'design',
   //   component: DesignTab,
@@ -71,6 +64,9 @@ export default [
     title: 'Lighting',
   },
   ...(DEBUG_ENABLED ? [{
+    key: 'test', component: Test, icon: faStethoscope,
+    path: KEY_TESTER_PATH, title: 'Key Tester',
+  }, {
     key: 'firmware-update', component: FirmwareUpdate, icon: faGear,
     path: FIRMWARE_PATH, title: 'Firmware Update',
   }, {

@@ -32,7 +32,6 @@ import {MenuContainer} from './configure-panes/custom/menu-generator';
 import {MenuTooltip} from '../inputs/tooltip';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faCircleQuestion} from '@fortawesome/free-solid-svg-icons';
-import {useProgress} from '@react-three/drei';
 import {AccentSelect} from '../inputs/accent-select';
 import {AccentRange} from '../inputs/accent-range';
 import {TestKeyboardSoundsMode} from '../void/test-keyboard-sounds';
@@ -67,7 +66,6 @@ export const Test: FC = () => {
   );
 
   const [testContextObj] = useContext(TestContext);
-  const {progress} = useProgress();
 
   const hasTestMatrixDevice =
     selectedDevice && selectedDefinition && keyDefinitions;
@@ -122,7 +120,7 @@ export const Test: FC = () => {
     (opt) => opt.value === testKeyboardSoundsSettings.mode,
   );
 
-  return progress !== 100 ? null : (
+  return (
     <TestPane>
       <Grid>
         <MenuCell style={{pointerEvents: 'all'}}>

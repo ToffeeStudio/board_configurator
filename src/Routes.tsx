@@ -10,7 +10,7 @@ import { getLoadProgress } from './store/keymapSlice';
 import { getConnectedDevices, getSupportedIds, setForceAuthorize } from './store/devicesSlice';
 import {UnconnectedGlobalMenu} from './components/menus/global';
 import {Route, useLocation} from 'wouter';
-import {DEBUG_ENABLED, MEASUREMENT_PATH} from './config/debug';
+import {DEBUG_ENABLED, MEASUREMENT_PATH, KEY_TESTER_PATH} from './config/debug';
 import PANES from './utils/pane-config';
 import {Home} from './components/Home';
 import {createGlobalStyle} from 'styled-components';
@@ -114,7 +114,8 @@ const Loader: React.FC = () => {
 export default () => {
   const hasHIDSupport = 'hid' in navigator || OVERRIDE_HID_CHECK;
   const [location] = useLocation();
-  const debugRoute = location === MEASUREMENT_PATH || location === '/toffee-test';
+  const standaloneDebugRoute = location === MEASUREMENT_PATH || location === '/toffee-test';
+  const debugRoute = standaloneDebugRoute || location === KEY_TESTER_PATH;
 
   const renderMode = useAppSelector(getRenderMode);
   const selectedDefinition = useAppSelector(getSelectedDefinition);
@@ -140,7 +141,7 @@ export default () => {
         <GlobalStyle />
         {hasHIDSupport && <UnconnectedGlobalMenu />}
         <MainContent>
-          {!debugRoute && <CanvasRouter />}
+          {!standaloneDebugRoute && (DEBUG_ENABLED || !debugRoute) && <CanvasRouter />}
           <Home hasHIDSupport={hasHIDSupport}>
             {!DEBUG_ENABLED && debugRoute ? <p style={{padding: 24}}>Debug mode is disabled.</p> : RouteComponents}
           </Home>

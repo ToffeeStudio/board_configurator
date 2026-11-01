@@ -27,11 +27,12 @@ import {useLocation} from 'wouter';
 import fullKeyboardDefinition from '../../../utils/test-keyboard-definition.json';
 import {TestContext} from '../../panes/test';
 import {getKeyboardCanvas} from './configure';
+import {DEBUG_ENABLED, KEY_TESTER_PATH} from '../../../config/debug';
 const EMPTY_ARR = [] as any[];
 export const Test = (props: {dimensions?: DOMRect; nDimension: NDimension}) => {
   const dispatch = useAppDispatch();
   const [path] = useLocation();
-  const isShowingTest = path === '/test';
+  const isShowingTest = DEBUG_ENABLED && path === KEY_TESTER_PATH;
   const api = useAppSelector(getSelectedKeyboardAPI);
   const device = useAppSelector(getSelectedConnectedDevice);
   const selectedDefinition = useAppSelector(getSelectedDefinition);
@@ -69,7 +70,7 @@ export const Test = (props: {dimensions?: DOMRect; nDimension: NDimension}) => {
 
   useEffect(() => {
     // Remove event listeners on cleanup
-    if (path !== '/test') {
+    if (!isShowingTest) {
       dispatch(setTestMatrixEnabled(false));
       testContext[0].clearTestKeys();
     }

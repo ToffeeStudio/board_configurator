@@ -5,7 +5,10 @@ test('static firmware entry reuses the built HTML and absolute asset links', () 
   (firmwarePageEntry().generateBundle as Function).call({emitFile: (file: any) => emitted.push(file)}, {}, {
     'index.html': {type: 'asset', source},
   });
-  expect(emitted).toEqual([{type: 'asset', fileName: 'toffee-firmware/index.html', source}]);
+  expect(emitted).toEqual([
+    {type: 'asset', fileName: 'toffee-firmware/index.html', source},
+    {type: 'asset', fileName: 'test/index.html', source},
+  ]);
 });
 test('missing built HTML fails rather than emitting an unusable firmware entry', () => {
   expect(() => (firmwarePageEntry().generateBundle as Function).call({emitFile() {throw new Error('Forbidden');}}, {}, {})).toThrow('index.html');

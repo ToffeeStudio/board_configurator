@@ -3,3 +3,4 @@
 export const DEBUG_ENABLED: boolean = true;
 export const MEASUREMENT_PATH = '/toffee-debug';
 export const FIRMWARE_PATH = '/toffee-firmware';
+export const KEY_TESTER_PATH = '/test';

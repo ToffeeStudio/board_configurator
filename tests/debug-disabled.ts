@@ -3,7 +3,7 @@ import {mock} from 'bun:test';
 import assert from 'node:assert/strict';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-mock.module('../src/config/debug', () => ({DEBUG_ENABLED: false, FIRMWARE_PATH: '/toffee-firmware', MEASUREMENT_PATH: '/toffee-debug'}));
+mock.module('../src/config/debug', () => ({DEBUG_ENABLED: false, FIRMWARE_PATH: '/toffee-firmware', MEASUREMENT_PATH: '/toffee-debug', KEY_TESTER_PATH: '/test'}));
 const {FirmwareUpdate} = await import('../src/components/panes/firmware-update');
 const {chooseModule} = await import('../src/utils/toffee_studio/firmware-update');
 const {grantedBootloader} = await import('../src/utils/toffee_studio/firmware-webusb');

@@ -3,6 +3,14 @@
 Current handover: **21 October 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
 
+**21 October deployment confirmed LIVE:** main `88073a3`, Render deployment
+`dep-dbc96jjm8hqs73bjf9c0`. [Updater](https://board-configurator.onrender.com/toffee-firmware/)
+and [recovery](https://board-configurator.onrender.com/toffee-firmware/?recovery=1)
+pass hosted page/reload checks; all three UF2 hashes match. Clean release tests,
+build and Debug-off pass. Key Tester remains local. No physical flash; interrupted
+hardware recovery qualification remains pending.
+[Deployment evidence](../AUTORESEARCH/04-09-2026%20PCB%20Lacking%20Current/firmware-update-recovery-20261020/deployment/README.md).
+
 **21 October — single-button updates and guided recovery.** `/toffee-firmware/`
 uses one panel and one primary action through bootloader permission, flashing and
 post-reboot verification. **Recover an interrupted update** opens
@@ -24,6 +32,43 @@ entry; reconnecting alone is not a guarantee. Browser-only backups are lost if s
 data is cleared. Recovery does not automatically downgrade firmware or promise
 uninterrupted typing. Firmware images, current estimation and limiter settings
 are unchanged by this web release.
+
+**21 October — guided recovery implemented locally.** The same single-panel
+updater now links to **Recover keyboard**. Exact target images and immutable
+original-sector/VIA backups survive reloads; byte verification is saved before
+reboot and completion after settings checks. Explicit recovery inspects flash,
+skips a matching image, repairs partial writes, or finishes settings-only recovery
+when Module has restarted. No-backup reinstall is explicit. Browser serial checks,
+a same-board confirmation, single-origin tab lock and bounded USB operations are
+included. 118 offline tests pass; simulated-browser recovery/reload checks, build
+and Debug-off pass. The same 11 unrelated TypeScript errors remain. No physical
+flash, source push or deployment; actual interrupted-board qualification remains
+pending. [Details and evidence](../AUTORESEARCH/04-09-2026%20PCB%20Lacking%20Current/firmware-update-recovery-20261020/guided-recovery/README.md).
+
+**20 October — single-button updater implemented locally.** One panel and one
+update button now carry the flow through bootloader access and post-reboot
+verification. Already-granted access continues automatically; fresh browser
+permission uses the same focused button in place. Separate step sections and
+the confirmation checkbox are removed; saved-backup downloads remain under
+collapsed details. Transport and images are unchanged. 23 targeted tests,
+eight supervised browser checks with simulated hardware, the build and
+Debug-off check pass; the same 11 unrelated TypeScript errors remain.
+No physical flash or deployment at that checkpoint. The 21 October guided
+recovery implementation above supersedes the then-pending recovery discussion. [Evidence](../AUTORESEARCH/04-09-2026%20PCB%20Lacking%20Current/firmware-update-recovery-20261020/single-button/README.md).
+
+**19 October — native VIA Key Tester restored locally.** Sidebar **Key Tester**
+opens `/test`. Browser keydown/up highlights, retained key history, Reset and
+the original sound controls reuse the upstream implementation. **Test Matrix**
+appears for a selected compatible VIA board (protocol9+); it reads physical
+switch state rather than remapped keycodes. Browser-event mode works without a
+connected PCB. The same `src/config/debug.ts` → `DEBUG_ENABLED` gates the tab,
+direct route, key/matrix listeners and built `test/index.html` entry. False
+means rebuild/reload; no firmware change is needed. Native controls no longer
+wait for unrelated3D assets, and the Module case/layer overlay is configure-only.
+106 offline tests, six visible-browser checks (simulated hardware), Debug-off
+checks and the production build pass; the same11 legacy TypeScript errors
+remain. Physical matrix operation is not newly tested. This addition is local,
+not pushed/deployed. [Evidence and commands](../AUTORESEARCH/04-09-2026%20PCB%20Lacking%20Current/key-tester-20261019-06nWaU/README.md).
 
 **19 October — integrated browser WebUSB updater.**
 `/toffee-firmware/` remains isolated from Redux/VIA polling, but now writes via
