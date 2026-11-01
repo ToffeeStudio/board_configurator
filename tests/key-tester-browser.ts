@@ -23,7 +23,7 @@ page.on('pageerror', (error: Error) => errors.push(error.message));
 const check = (message: string) => {checks.push(message); console.info('KEY TESTER PASS:', message);};
 const highlighted = page.locator('[style*="background: mediumvioletred"]');
 try {
-  await page.goto(new URL('/test/', base).href);
+  await page.goto(new URL('/test/?debug=1', base).href);
   await page.getByRole('button', {name: 'Reset', exact: true}).waitFor();
   assert.equal(new URL(page.url()).pathname, '/test');
   assert.equal(await page.getByText('Key Tester', {exact: true}).count(), 1);
@@ -82,8 +82,7 @@ try {
   check('Simulated compatible-board matrix polling highlights transitions and stops on navigation');
   const disabled = await context.newPage();
   disabled.on('pageerror', (error: Error) => errors.push(error.message));
-  await disabled.route('**/src/config/debug.ts*', (route: any) => route.fulfill({contentType: 'text/javascript', body:
-    'export const DEBUG_ENABLED=false, KEY_TESTER_PATH="/test", FIRMWARE_PATH="/toffee-firmware", MEASUREMENT_PATH="/toffee-debug";'}));
+  // A new tab opened without ?debug=1 starts with Debug off.
   await disabled.goto(new URL('/test', base).href);
   await disabled.getByText('Debug mode is disabled.', {exact: true}).waitFor();
   assert.equal(await disabled.getByText('Key Tester', {exact: true}).count(), 0);
@@ -93,7 +92,7 @@ try {
     const event = new KeyboardEvent('keydown', {code: 'KeyA', cancelable: true});
     window.dispatchEvent(event); return event.defaultPrevented;
   }), false);
-  check('Debug=false hides tab, blocks direct tester route and attaches no key capture/canvas');
+  check('Debug off (new tab, no ?debug=1) hides tab, blocks direct tester route and attaches no key capture/canvas');
   assert.deepEqual(errors, []);
 } finally {
   await writeFile(report, JSON.stringify({checks, errors}, null, 2), {flag: 'wx'});

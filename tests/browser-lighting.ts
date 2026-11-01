@@ -213,7 +213,7 @@ const selectOption = async (name: string, label: string) => {
   await page.getByRole('option', {name: label, exact: true}).click();
 };
 try {
-  await page.goto(baseUrl + '/toffee-lighting');
+  await page.goto(baseUrl + '/toffee-lighting?debug=1'); // the power Debug panel needs Debug on
   // The actual app must finish connection/definition/keymap loading before
   // any stimulus. A visible slider behind its global loader is not readiness.
   await ready();

@@ -11,6 +11,7 @@ import { GlowingMenu } from '../toffee_studio/GlowingMenu/GlowingMenu';
 import {PowerDebug} from '../toffee_studio/power-debug';
 import {useAppSelector} from 'src/store/hooks';
 import {getSelectedKeyboardAPI} from 'src/store/devicesSlice';
+import {DEBUG_ENABLED} from 'src/config/debug';
 
 // This is the title that will appear in the tooltip for the tab icon.
 export const Title = 'Lighting';
@@ -52,12 +53,23 @@ const TwoColumnGrid = styled(Grid)`
   width: 100%;
 `;
 
+// Tab ids keep the original order: 0 Underglow, 1 Front Lighting, 2 Per-Key LED, 3 Badge.
+const TABS = [
+  {id: 0, label: 'Underglow'},
+  {id: 1, label: 'Front Lighting'},
+  {id: 2, label: 'Per-Key LED', debugOnly: true},
+  {id: 3, label: 'Badge'},
+];
+
 // This is the main component for the pane, which will be rendered when the tab is clicked.
 export const ToffeeLighting: FC = () => {
   const keyboard = useAppSelector(getSelectedKeyboardAPI);
   const device = keyboard ? keyboard.getHID()._hidDevice!._device : null;
-  const [selectedTab, setSelectedTab] = useState(0);
-  const items = ['Underglow', 'Front Lighting', 'Per-Key LED', 'Badge'];
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  // Per-key LED brightness is a Debug-only tool.
+  const tabs = TABS.filter(tab => DEBUG_ENABLED || !tab.debugOnly);
+  const items = tabs.map(tab => tab.label);
+  const selectedTab = tabs[selectedIndex]?.id ?? 0;
   
   return (
     <BasePane>
@@ -65,8 +77,8 @@ export const ToffeeLighting: FC = () => {
         <MenuContainer>
           <GlowingMenu 
             items={items} 
-            selectedIndex={selectedTab} 
-            onChange={setSelectedTab} 
+            selectedIndex={selectedIndex} 
+            onChange={setSelectedIndex} 
           />
         </MenuContainer>
         <PowerDebug device={device}/>

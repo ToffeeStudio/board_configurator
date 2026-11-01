@@ -40,9 +40,11 @@ const record=async(n:number,amps:string)=>{
   await page.getByRole('status').filter({hasText:'Recorded'}).waitFor();
 };
 try {
-  const fixtureUrl=new URL('/tests/manual-measurement-fixture.html',baseUrl).href;
+  // Debug is switched on by the page URL (?debug=1) and remembered for the tab until ?debug=0.
+  const fixtureUrl=new URL('/tests/manual-measurement-fixture.html?debug=1',baseUrl).href;
+  const fixturePlainUrl=new URL('/tests/manual-measurement-fixture.html',baseUrl).href;
   const html=await(await fetch(fixtureUrl,{headers:{accept:'*/*'}})).text();
-  await page.route(fixtureUrl,(route:any)=>route.fulfill({contentType:'text/html',body:html}));
+  for(const url of [fixtureUrl,fixturePlainUrl])await page.route(url,(route:any)=>route.fulfill({contentType:'text/html',body:html}));
   await page.goto(fixtureUrl);
   await page.getByRole('heading',{name:'Lighting measurement checklist'}).waitFor();
   assert.equal(await page.getByRole('table',{name:'Fixed measurement states'}).locator('tbody tr').count(),151);
@@ -151,17 +153,13 @@ try {
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:screenshotPath+'.bottom.png'});
   check('Actual route/sidebar loads offline; long list scrolls to state150 and keeps All off accessible');
-  await page.route('**/src/config/debug.ts*',async(route:any)=>{
-    const response=await route.fetch(),source=await response.text();assert.ok(source.includes('DEBUG_ENABLED = true'));
-    await route.fulfill({response,body:source.replace('DEBUG_ENABLED = true','DEBUG_ENABLED = false')});
-  });
-  await page.reload();await page.getByText('Debug mode is disabled.',{exact:true}).waitFor();
+  await page.goto(new URL('/toffee-debug?debug=0',baseUrl).href);await page.getByText('Debug mode is disabled.',{exact:true}).waitFor();
   assert.equal(await page.getByText('Lighting Debug',{exact:true}).count(),0);
   await page.goto(new URL('/toffee-test',baseUrl).href);await page.getByText('Debug mode is disabled.',{exact:true}).waitFor();
-  await page.goto(fixtureUrl);await page.getByText('Debug mode is disabled.',{exact:true}).waitFor();
+  await page.goto(fixturePlainUrl);await page.getByText('Debug mode is disabled.',{exact:true}).waitFor();
   assert.match(await page.evaluate(async()=>{try{await(window as any).disabledWrite();return 'bad';}catch(e){return String(e);}}),/disabled/);
   assert.equal((await state()).packets.length,0);
-  check('DEBUG_ENABLED=false blocks both debug routes/navigation and debug HID helpers');
+  check('?debug=0 blocks both debug routes/navigation and debug HID helpers, and stays off without the parameter');
   assert.deepEqual(errors,[]);
   await report.writeFile(JSON.stringify({scope:'OFFLINE simulated HID only; all150 UI requests checked',checks,errors},null,2));
 }catch(error){

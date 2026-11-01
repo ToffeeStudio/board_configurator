@@ -1,7 +1,22 @@
 # Toffee board configurator
 
-Current handover: **21 October 2026 (Australia/Sydney)**. This is the VIA fork
+Current handover: **1 November 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
+
+**1 November — Debug is set by the URL; emulated board (local, uncommitted on
+branch `debug-emulated-board`).** `?debug=1` turns Debug on for the browser tab and
+`?debug=0` turns it off. The tab remembers the setting and keeps `?debug=1` in the
+address bar. This replaces editing `DEBUG_ENABLED` in `src/config/debug.ts`. Builds
+now always contain the debug pages and firmware downloads, so the older notes below
+about a Debug-off rebuild no longer apply. Debug now also gates the Lighting page's
+Per-Key LED tab. In Debug, **Connect emulated board** (under Connect Keyboard)
+connects an in-memory Module. It answers VIA and Toffee lighting commands, hides real
+boards while connected and survives reloads in the tab. The firmware updater and
+Lighting Debug refuse it. **Before deploying:** the live updater will need `?debug=1`
+(`/toffee-firmware/?debug=1`, `?recovery=1&debug=1`). Passing: 134 offline tests, the
+Debug-off script, the build, and the browser runs (simulated hardware only). The same
+11 TypeScript errors remain. No hardware was touched, and nothing was pushed or
+deployed. [Details and evidence](../AUTORESEARCH/01-11-2026%20Halo%20Stage%20Configurator/README.md).
 
 **21 October deployment confirmed LIVE:** main `88073a3`, Render deployment
 `dep-dbc96jjm8hqs73bjf9c0`. [Updater](https://board-configurator.onrender.com/toffee-firmware/)

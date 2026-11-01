@@ -11,7 +11,7 @@ const server = Bun.serve({hostname: '127.0.0.1', port: 0, async fetch(request) {
   if (target !== root && !target.startsWith(root + path.sep)) return new Response('Not found', {status: 404});
   try {
     if ((await stat(target)).isDirectory()) {
-      if (!url.pathname.endsWith('/')) return Response.redirect(new URL(url.pathname + '/', url), 308);
+      if (!url.pathname.endsWith('/')) return Response.redirect(new URL(url.pathname + '/' + url.search, url), 308);
       target = path.join(target, 'index.html');
     }
     if (!(await Bun.file(target).exists())) return new Response('Not found', {status: 404});
@@ -35,7 +35,8 @@ await page.addInitScript(() => {
 try {
   assert.equal((await fetch(base + '/toffee-lighting')).status, 404);
   assert.equal((await fetch(base + '/toffee-firmware', {redirect: 'manual'})).status, 308);
-  for (const address of ['/toffee-firmware', '/toffee-firmware/']) {
+  // The updater is a Debug page: ?debug=1 switches it on, and the directory redirect keeps it.
+  for (const address of ['/toffee-firmware?debug=1', '/toffee-firmware/?debug=1']) {
     const response = await page.goto(base + address);
     assert.equal(response!.status(), 200);
     await page.getByRole('heading', {name: 'Module firmware update', exact: true}).waitFor();

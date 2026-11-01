@@ -1,5 +1,6 @@
 import {CommandID, ToffeeHIDDevice, ToffeeLightingAPI} from './hid';
 import {DEBUG_ENABLED} from '../../config/debug';
+import {isEmulatedBoardConnected, isEmulatedDevice} from './emulated-board';
 import {usbStep} from './picoboot';
 
 export type FirmwareChoice = {
@@ -9,7 +10,10 @@ export type FirmwareChoice = {
 };
 export type ViaSettings = {layers: number; keymap: string; macros: string; layout: string};
 export const MODULE_FILTER = {vendorId: 0x1067, productId: 0x626d, usagePage: 0xff60, usage: 0x61};
-const requireDebug = () => {if (!DEBUG_ENABLED) throw new Error('Firmware updater is disabled.');};
+const requireDebug = () => {
+  if (!DEBUG_ENABLED) throw new Error('Firmware updater is disabled.');
+  if (isEmulatedBoardConnected()) throw new Error('Firmware updates need a real Module. Disconnect the emulated board first.');
+};
 const hex = (bytes: Uint8Array) => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
 const unhex = (value: string) => Uint8Array.from(value.match(/../g) || [], b => parseInt(b, 16));
 export function validateSettings(value: ViaSettings): ViaSettings {
@@ -63,7 +67,10 @@ export async function grantedModules(): Promise<HIDDevice[]> {
 export class FirmwareConnection {
   private busy = false;
   private failed = false;
-  constructor(readonly device: HIDDevice) {requireDebug();}
+  constructor(readonly device: HIDDevice) {
+    requireDebug();
+    if (isEmulatedDevice(device)) throw new Error('Firmware updates need a real Module, not the emulated board.');
+  }
   async via(code: number, payload = new Uint8Array()): Promise<Uint8Array> {
     if (this.busy || this.failed) throw new Error('Reconnect before starting another firmware operation.');
     this.busy = true;

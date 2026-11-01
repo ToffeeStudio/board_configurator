@@ -19,7 +19,8 @@ await page.addInitScript(() => {
 });
 try {
   for (const suffix of ['', '/']) {
-    const response = await page.goto('https://board-configurator.onrender.com/toffee-firmware' + suffix);
+    // ?debug=1 is required once the URL-driven Debug switch is deployed; older builds ignore it.
+    const response = await page.goto('https://board-configurator.onrender.com/toffee-firmware' + suffix + '?debug=1');
     assert.equal(response!.status(), 200);
     await page.getByRole('heading', {name: 'Module firmware update', exact: true}).waitFor();
     await page.getByRole('option', {name: 'Normal · 940 mA', exact: true}).waitFor({state: 'attached'});
@@ -31,7 +32,7 @@ try {
     assert.equal(await page.locator('button').count(), 1);
     checks.push('Live URL' + (suffix || ' without slash') + ': HTTP200, current updater/catalogue and refresh');
   }
-  const recovery = await page.goto('https://board-configurator.onrender.com/toffee-firmware/?recovery=1');
+  const recovery = await page.goto('https://board-configurator.onrender.com/toffee-firmware/?recovery=1&debug=1');
   assert.equal(recovery!.status(), 200);
   await page.getByRole('heading', {name: 'Recover your keyboard', exact: true}).waitFor();
   await page.getByRole('option', {name: 'No saved backup — reinstall firmware', exact: true}).waitFor({state: 'attached'});

@@ -22,7 +22,7 @@ await page.route('https://**/*', (route: any) => route.abort());
 page.on('pageerror', (error: Error) => errors.push(error.message));
 page.on('dialog', (dialog: any) => dialog.accept());
 const check = (message: string) => {checks.push(message); console.info('UPDATER UI PASS:', message);};
-const fixture = new URL('/tests/firmware-update-fixture.html', base).href;
+const fixture = new URL('/tests/firmware-update-fixture.html?debug=1', base).href; // ?debug=1 switches Debug on
 const ready = async () => {
   await page.goto(fixture);
   await page.getByRole('option', {name: 'Normal · 940 mA', exact: true}).waitFor({state: 'attached'});
@@ -127,7 +127,7 @@ try {
   });
   const requests: string[] = [];
   page.on('request', (request: any) => requests.push(request.url()));
-  await page.goto(new URL('/toffee-firmware/', base).href);
+  await page.goto(new URL('/toffee-firmware/?debug=1', base).href);
   await page.getByRole('heading', {name: 'Module firmware update', exact: true}).waitFor();
   await page.waitForTimeout(1000);
   assert.equal(requests.some(url => url.includes('/normal-index') || url.includes('.glb')), false);

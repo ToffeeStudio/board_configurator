@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import styled from 'styled-components';
 import {DEBUG_ENABLED} from '../../config/debug';
+import {isEmulatedDevice} from '../../utils/toffee_studio/emulated-board';
 import {ToffeeHIDDevice, ToffeeLightingAPI} from '../../utils/toffee_studio/hid';
 import {allOff, appendReading, BASELINE, ALL_CHECKLIST, debugCommand, loadReadings,
   MIXED_BUILDS, manualStatus, meterValues, mixedPayload, Preset, rawPayload, Reading, readingsCSV,
@@ -69,7 +70,10 @@ function StateRow({number, value, active, busy, canApply, latest, canRecord, onA
 }
 
 export function ManualMeasurement(props: Props) {
-  return DEBUG_ENABLED ? <MeasurementContent {...props}/> : <p>Debug mode is disabled.</p>;
+  if (!DEBUG_ENABLED) return <p>Debug mode is disabled.</p>;
+  if (isEmulatedDevice(props.device))
+    return <p style={{padding: 24}}>Lighting measurements need a real Module. Disconnect the emulated board first.</p>;
+  return <MeasurementContent {...props}/>;
 }
 function MeasurementContent({device, onConnect}: Props) {
   const link = useMemo(() => {

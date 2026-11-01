@@ -23,6 +23,7 @@ import {useAppSelector, useAppDispatch} from './store/hooks';
 import {getRenderMode} from './store/settingsSlice';
 import {getSelectedDefinition} from './store/definitionsSlice';
 import {reloadConnectedDevices} from './store/devicesThunks';
+import {ConnectEmulatedBoardButton, EmulatedBoardStatus} from './components/toffee_studio/emulated-board';
 import styled from 'styled-components';
 
 const GlobalStyle = createGlobalStyle`
@@ -103,6 +104,7 @@ const Loader: React.FC = () => {
             Connect Keyboard
             <FontAwesomeIcon style={{ marginLeft: '10px' }} icon={faPlus} />
           </GlowButton>
+          {DEBUG_ENABLED && <ConnectEmulatedBoardButton />}
         </>
        ) : (
          <LoadingText isSearching={!selectedDefinition} />
@@ -137,6 +139,7 @@ export default () => {
   return (
     <>
       {showLoader && <Loader />}
+      {DEBUG_ENABLED && <EmulatedBoardStatus />}
       <TestContext.Provider value={testContextState}>
         <GlobalStyle />
         {hasHIDSupport && <UnconnectedGlobalMenu />}

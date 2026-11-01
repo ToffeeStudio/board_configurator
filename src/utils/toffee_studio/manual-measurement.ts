@@ -1,4 +1,5 @@
 import {DEBUG_ENABLED} from '../../config/debug';
+import {isEmulatedBoardConnected} from './emulated-board';
 import {CommandID, PowerStatus, ToffeeHIDDevice, ToffeeLightingAPI} from './hid';
 import map from './lighting-map.json';
 
@@ -112,12 +113,14 @@ export function mixedPayload(value: MixedPreset): Uint8Array {
 }
 export async function debugCommand(hid: ToffeeHIDDevice, code: number, payload = new Uint8Array()): Promise<Uint8Array> {
   if (!DEBUG_ENABLED) throw new Error('Debug mode is disabled.');
+  if (isEmulatedBoardConnected()) throw new Error('Measurements need a real Module. Disconnect the emulated board first.');
   const [status, data] = await hid.executeCommand(code as CommandID, payload);
   if (status !== 0) throw new Error(`Debug command 0x${code.toString(16)} rejected (0x${status.toString(16)}).`);
   return data;
 }
 export async function manualStatus(hid: ToffeeHIDDevice, api: ToffeeLightingAPI) {
   if (!DEBUG_ENABLED) throw new Error('Debug mode is disabled.');
+  if (isEmulatedBoardConnected()) throw new Error('Measurements need a real Module. Disconnect the emulated board first.');
   const power = await api.getPowerStatus();
   if (!power.manualMeasurement || power.modelRevision !== 0x8006)
     throw new Error('Unlimited manual test firmware is required. This page will not send presets to normal/limited firmware.');

@@ -23,9 +23,12 @@ const set = (fields: Record<string, unknown>) => page.evaluate((values: Record<s
 try {
   // The app's HTML plugin redirects navigation requests to its SPA entry.
   // Fetch the Vite-transformed fixture without the navigation Accept header.
-  const fixtureUrl = new URL('/tests/power-debug-fixture.html', baseUrl).href;
+  // Debug is switched on by the page URL (?debug=1) and off by ?debug=0.
+  const fixtureUrl = new URL('/tests/power-debug-fixture.html?debug=1', baseUrl).href;
+  const fixtureOffUrl = new URL('/tests/power-debug-fixture.html?debug=0', baseUrl).href;
   const html = await (await fetch(fixtureUrl, {headers: {accept: '*/*'}})).text();
-  await page.route(fixtureUrl, (route: any) => route.fulfill({contentType: 'text/html', body: html}));
+  for (const url of [fixtureUrl, fixtureOffUrl])
+    await page.route(url, (route: any) => route.fulfill({contentType: 'text/html', body: html}));
   await page.goto(fixtureUrl);
   await page.getByRole('button', {name: 'Debug: current budget'}).waitFor();
   await page.waitForTimeout(400);
@@ -140,18 +143,13 @@ try {
   await page.getByRole('button', {name: 'Toggle selected device'}).click();
   await page.getByTestId('power-requested').waitFor();
   check('Disconnect clears readings and selected-device replacement reconnects cleanly');
-  await page.route('**/src/config/debug.ts*', async (route: any) => {
-    const response = await route.fetch(), source = await response.text();
-    assert.ok(source.includes('DEBUG_ENABLED = true'));
-    await route.fulfill({response, body: source.replace('DEBUG_ENABLED = true', 'DEBUG_ENABLED = false')});
-  });
-  await page.reload();
+  await page.goto(fixtureOffUrl);
   await page.getByRole('heading', {name: 'Offline Debug UI test'}).waitFor();
   assert.equal(await page.getByRole('button', {name: 'Debug: current budget'}).count(), 0);
   assert.equal(await page.getByTestId('power-output-caps').count(), 0);
   await page.waitForTimeout(500);
   assert.equal((await counts()).reads, 0);
-  check('Source DEBUG_ENABLED=false hides the entire panel/caps and prevents polling');
+  check('URL ?debug=0 hides the entire panel/caps and prevents polling');
   assert.deepEqual(errors, []);
   await report.writeFile(JSON.stringify({scope: 'OFFLINE components and simulated HID only; no PCB access', checks, errors, counts: await counts()}, null, 2));
 } catch (failure) {
