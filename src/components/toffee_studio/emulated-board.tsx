@@ -34,21 +34,21 @@ export function ConnectEmulatedBoardButton() {
   );
 }
 
+// Sits in the sidebar's status line, in place of "<board> connected".
 const Pill = styled.div`
-  position: fixed;
-  left: 16px;
-  bottom: 16px;
-  z-index: 200;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  padding: 6px 6px 6px 12px;
-  border-radius: 999px;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 8px 8px 12px;
+  border-radius: 14px;
   border: 1px solid rgba(221, 190, 120, 0.55);
   background: rgba(36, 30, 18, 0.92);
   color: #f3dcaa;
-  font: 500 13px/1.2 system-ui, sans-serif;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  font: 500 12px/1.3 Montserrat, system-ui, sans-serif;
   button {
     font: inherit;
     color: inherit;

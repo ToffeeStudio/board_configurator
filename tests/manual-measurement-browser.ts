@@ -145,7 +145,7 @@ try {
   check('Disconnect invalidates firmware verification and PCB identity without deleting measurements');
   await page.goto(new URL('/toffee-debug',baseUrl).href);
   await page.getByRole('heading',{name:'Lighting measurement checklist'}).waitFor();
-  await page.getByText('Lighting Debug',{exact:true}).waitFor();
+  await page.getByRole('navigation',{name:'Pages'}).getByText('Lighting Debug',{exact:true}).waitFor(); // sidebar; the page header repeats it
   await page.screenshot({path:screenshotPath+'.route.png'});
   await page.setViewportSize({width:900,height:900});
   await page.getByTestId('state-150').scrollIntoViewIfNeeded();

@@ -26,7 +26,7 @@ try {
   await page.goto(new URL('/test/?debug=1', base).href);
   await page.getByRole('button', {name: 'Reset', exact: true}).waitFor();
   assert.equal(new URL(page.url()).pathname, '/test');
-  assert.equal(await page.getByText('Key Tester', {exact: true}).count(), 1);
+  assert.equal(await page.getByRole('navigation', {name: 'Pages'}).getByText('Key Tester', {exact: true}).count(), 1);
   assert.ok(await page.locator('canvas').count() > 100);
   assert.equal(await page.getByRole('button', {name: 'Connect Keyboard', exact: true}).count(), 0);
   check('Direct trailing-slash link opens native full-layout tester without a PCB or connect overlay');

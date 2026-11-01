@@ -9,6 +9,7 @@ import menusReducer from './menusSlice';
 import designReducer from './designSlice';
 import errorsReducer from './errorsSlice';
 import cdcReducer from './cdcSlice';
+import toffeeLightingReducer from './toffeeLightingSlice';
 import {errorsListenerMiddleware} from './errorsListener';
 
 export const store = configureStore({
@@ -23,6 +24,7 @@ export const store = configureStore({
     design: designReducer,
     cdc: cdcReducer,
     errors: errorsReducer,
+    toffeeLighting: toffeeLightingReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(errorsListenerMiddleware.middleware),

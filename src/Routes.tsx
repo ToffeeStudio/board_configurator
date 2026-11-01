@@ -7,7 +7,7 @@ import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { isElectron } from './utils/running-context';
 import { getSelectedTheme } from './store/settingsSlice';
 import { getLoadProgress } from './store/keymapSlice';
-import { getConnectedDevices, getSupportedIds, setForceAuthorize } from './store/devicesSlice';
+import { getConnectedDevices, getSelectedConnectedDevice, getSelectedKeyboardAPI, getSupportedIds, setForceAuthorize } from './store/devicesSlice';
 import {UnconnectedGlobalMenu} from './components/menus/global';
 import {Route, useLocation} from 'wouter';
 import {DEBUG_ENABLED, MEASUREMENT_PATH, KEY_TESTER_PATH} from './config/debug';
@@ -23,8 +23,15 @@ import {useAppSelector, useAppDispatch} from './store/hooks';
 import {getRenderMode} from './store/settingsSlice';
 import {getSelectedDefinition} from './store/definitionsSlice';
 import {reloadConnectedDevices} from './store/devicesThunks';
-import {ConnectEmulatedBoardButton, EmulatedBoardStatus} from './components/toffee_studio/emulated-board';
+import {ConnectEmulatedBoardButton} from './components/toffee_studio/emulated-board';
+import {HaloAmbient} from './components/toffee_studio/halo/halo-ambient';
+import {HaloHeader} from './components/toffee_studio/halo/halo-header';
+import {loadToffeeLighting, resetToffeeLighting} from './store/toffeeLightingSlice';
+import {TARGET_PRODUCT_ID, TARGET_VENDOR_ID} from './config';
+import {getVendorProductId} from './utils/hid-keyboards';
 import styled from 'styled-components';
+
+const MODULE_ID = getVendorProductId(TARGET_VENDOR_ID, TARGET_PRODUCT_ID);
 
 const GlobalStyle = createGlobalStyle`
   *:focus {
@@ -32,14 +39,18 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
+// Positioned so it paints above the fixed Halo ambient layer.
 const MainContent = styled.div`
   flex-grow: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
+  box-sizing: border-box;
+  padding: 24px 24px 24px 20px;
   position: relative;
-  overflow: hidden;
+  /* clip, not hidden: the case overlay is wider than this area, and focus must not scroll to it. */
+  overflow: clip;
 `
 
 const defaultGlowColors = [
@@ -124,6 +135,20 @@ export default () => {
   const loadProgress = useAppSelector(getLoadProgress);
   const showLoader = (!selectedDefinition || loadProgress !== 1) && !debugRoute;
 
+  // A Module's lighting tints the Halo background on every page; a new board starts from nothing.
+  // Other boards don't answer Toffee commands, so they are never sent any.
+  const dispatch = useAppDispatch();
+  const keyboard = useAppSelector(getSelectedKeyboardAPI);
+  const device = useAppSelector(getSelectedConnectedDevice);
+  const isModule = !!device && device.vendorProductId === MODULE_ID;
+  const boardReady = !!selectedDefinition && loadProgress === 1;
+  useEffect(() => {
+    dispatch(resetToffeeLighting());
+  }, [keyboard, dispatch]);
+  useEffect(() => {
+    if (keyboard && isModule && boardReady) dispatch(loadToffeeLighting(keyboard));
+  }, [keyboard, isModule, boardReady, dispatch]);
+
   const RouteComponents = useMemo(
     () =>
       PANES.map((pane) => {
@@ -139,11 +164,12 @@ export default () => {
   return (
     <>
       {showLoader && <Loader />}
-      {DEBUG_ENABLED && <EmulatedBoardStatus />}
+      <HaloAmbient />
       <TestContext.Provider value={testContextState}>
         <GlobalStyle />
         {hasHIDSupport && <UnconnectedGlobalMenu />}
         <MainContent>
+          <HaloHeader />
           {!standaloneDebugRoute && (DEBUG_ENABLED || !debugRoute) && <CanvasRouter />}
           <Home hasHIDSupport={hasHIDSupport}>
             {!DEBUG_ENABLED && debugRoute ? <p style={{padding: 24}}>Debug mode is disabled.</p> : RouteComponents}

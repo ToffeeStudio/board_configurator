@@ -33,6 +33,10 @@ import {LayerControl} from '../panes/configure-panes/layer-control';
 import {Badge} from '../panes/configure-panes/badge';
 import KeyboardCaseImg from '../../assets/images/case.png';
 
+// The board (canvas keycaps and case overlay) shows on Configure and, read-only, on Lighting.
+const LIGHTING_PATH = '/toffee-lighting';
+const isBoardPage = (path: string) => path === '/' || path === LIGHTING_PATH;
+
 const fadeSlideIn = keyframes`
   0% {
     opacity: 0;
@@ -158,7 +162,7 @@ export const CanvasRouter = () => {
   const theme = useAppSelector(getSelectedTheme);
   const accentColor = useMemo(() => theme[KeyColorType.Accent].c, [theme]);
   
-  const showLoader = path === '/' && (!selectedDefinition || loadProgress !== 1);
+  const showLoader = isBoardPage(path) && (!selectedDefinition || loadProgress !== 1);
   const versionDefinitions: DefinitionVersionMap[] = useMemo(
     () =>
       localDefinitions.filter(
@@ -168,7 +172,7 @@ export const CanvasRouter = () => {
   );
   
   const hideDesignScene = '/design' === path && !versionDefinitions.length;
-  const hideConfigureScene = '/' === path && (!selectedDefinition || (loadProgress + progress / 100) / 2 !== 1);
+  const hideConfigureScene = isBoardPage(path) && (!selectedDefinition || (loadProgress + progress / 100) / 2 !== 1);
   const terrainOnClick = useCallback(() => {
     if (true) {
       dispatch(updateSelectedKey(null));
@@ -176,7 +180,7 @@ export const CanvasRouter = () => {
   }, [dispatch]);
   const showAuthorizeButton = 'hid' in navigator || OVERRIDE_HID_CHECK;
 
-  const ALLOWED_CANVAS_ROUTES = ['/', '/test', '/design', '/debug'];
+  const ALLOWED_CANVAS_ROUTES = ['/', LIGHTING_PATH, '/test', '/design', '/debug'];
   const showCanvas = ALLOWED_CANVAS_ROUTES.includes(path);
 
   const hideCanvasScene =
@@ -192,7 +196,7 @@ export const CanvasRouter = () => {
   
   let overlayStyle: React.CSSProperties = { display: 'none' };
 
-  if (path === '/' && layoutStats && absoluteRect && !hideCanvasScene && !hideTerrainBG) {
+  if (isBoardPage(path) && layoutStats && absoluteRect && !hideCanvasScene && !hideTerrainBG) {
     const offsetX = 4 * layoutStats.ratio;
     const offsetY = -86 * layoutStats.ratio;
 
@@ -231,7 +235,8 @@ export const CanvasRouter = () => {
             : '',
           position: hideCanvasScene && !hideTerrainBG ? 'absolute' : 'relative',
           overflow: 'visible',
-          zIndex: 2,
+          // No z-index here: without its own stacking context, the case overlay's screen blend
+          // reaches the Halo ambient light behind the page, so its black surround stays clear.
           visibility: hideCanvasScene && !hideTerrainBG ? 'hidden' : 'visible',
         }}
         onClick={(evt) => {
@@ -304,6 +309,11 @@ const KeyboardGroup = React.memo((props: any) => {
           selectable={configureKeyboardIsSelectable}
           nDimension={'2D'}
         />
+      );
+      break;
+    case LIGHTING_PATH:
+      ComponentToRender = (
+        <ConfigureKeyboard dimensions={containerDimensions} selectable={false} nDimension={'2D'} />
       );
       break;
     case '/test':

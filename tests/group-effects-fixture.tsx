@@ -1,16 +1,17 @@
-// Real menus and Redux selection, explicitly simulated HID only.
+// Real Halo lighting controls and Redux selection, explicitly simulated HID only.
 import React, {useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {Provider} from 'react-redux';
 import {store} from '../src/store';
 import {selectDevice} from '../src/store/devicesSlice';
 import {HID} from '../src/shims/node-hid';
-import {GroupLightingMenu} from '../src/components/toffee_studio/group-lighting-menu';
+import {HaloLightingControls, LightingZoneTabs} from '../src/components/toffee_studio/halo/halo-lighting';
+import {HaloAmbient} from '../src/components/toffee_studio/halo/halo-ambient';
 class Device extends EventTarget {
   vendorId = 0x1067; productId = 0x626d; productName = 'OFFLINE SIMULATED MODULE';
   collections = [{usagePage:0xff60,usage:0x61}];
   opened = false; version = 3; reject = false; pending = 0; maximumPending = 0;
-  front = [1,100,18,40,255]; badge = [1,18,40,255,1,100]; packets: number[][] = [];
+  rear = [7,110,180,190,255]; front = [1,100,18,40,255]; badge = [1,18,40,255,1,100]; packets: number[][] = [];
   async open() {this.opened = true;}
   async sendReport(report: number, packet: Uint8Array) {
     if (report !== 0 || !this.opened) throw new Error('Invalid simulated HID transaction.');
@@ -21,6 +22,11 @@ class Device extends EventTarget {
       const reply = new Uint8Array(32);
       if (this.reject) reply[0] = 0xef;
       else switch (packet[1]) {
+        case 0x71: this.rear[0] = packet[6]; break;
+        case 0x72: this.rear[1] = packet[6]; break;
+        case 0x74: this.rear[2] = packet[6]; break;
+        case 0x75: this.rear[3] = packet[6]; this.rear[4] = packet[7]; break;
+        case 0x76: reply.set(this.rear,1); break;
         case 0x85: reply.set(this.version === 3 ? [3,66,22,16,104,45,6] : [2,66,22,16,104,9],1); break;
         case 0x80: reply.set(this.front,1); break;
         case 0x81: this.front = [...packet.slice(6,11)]; break;
@@ -51,10 +57,13 @@ const [selected] = await HID.devices();
 store.dispatch(selectDevice(selected as any));
 function Fixture() {
   const [revision,setRevision] = useState(0);
-  return <Provider store={store}><h1>SIMULATED lighting menus — no physical USB</h1>
-    <button onClick={()=>setRevision(n=>n+1)}>Reload menus</button>
-    <section aria-label="Front panel" key={'front'+revision}><h2>Front</h2><GroupLightingMenu group="front"/></section>
-    <section aria-label="Badge panel" key={'badge'+revision}><h2>Badge</h2><GroupLightingMenu group="badge"/></section>
+  return <Provider store={store}><HaloAmbient/>
+    <div style={{position:'relative'}}>
+      <h1>SIMULATED lighting controls — no physical USB</h1>
+      <button onClick={()=>setRevision(n=>n+1)}>Reload menus</button>
+      <LightingZoneTabs/>
+      <HaloLightingControls key={revision}/>
+    </div>
   </Provider>;
 }
 createRoot(document.getElementById('root')!).render(<Fixture/>);

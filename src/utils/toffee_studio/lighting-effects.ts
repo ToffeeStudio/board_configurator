@@ -48,3 +48,6 @@ export const FRONT_EFFECTS = [
 ].map((label, value) => ({label, value}));
 export const BADGE_EFFECTS = ['Off', 'Solid', 'Breathing', 'Rainbow Cycle', 'Chase', 'Typing Pulse']
   .map((label, value) => ({label, value}));
+// Underglow animation IDs 0–9, as the original underglow menu listed them.
+export const REAR_EFFECTS = ['Solid', 'Breathing', 'Cycle L-R', 'Cycle U-D', 'Band Sat L-R', 'Band Sat U-D',
+  'Hue Breathing', 'Rainbow Vortex', 'Vortex', 'Comet Tail'].map((label, value) => ({label, value}));

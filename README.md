@@ -3,7 +3,22 @@
 Current handover: **1 November 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
 
-**1 November — Debug is set by the URL; emulated board (local, uncommitted on
+**1 November — Halo Stage UI (Part B, local, uncommitted on `debug-emulated-board`).**
+The layout follows 01 Halo Stage:
+
+- a glass sidebar with the same navigation list and a board status line;
+- a page header (on Lighting it holds the zone tabs);
+- glass panels;
+- a background that softly takes the board's underglow, front and badge colours.
+
+The Lighting page now shows the board, read-only. Its controls are one bar: effect chips, brightness
+and speed sliders, and a hue/saturation wheel with swatches. Lighting state is shared in
+`src/store/toffeeLightingSlice.ts`. The app reads it from Modules only, when the board is ready and
+again on Lighting. The board graphic is unchanged. Passing: 137 offline tests, the Debug-off script,
+the build, and the browser runs (simulated hardware only). There are 10 legacy TypeScript errors.
+[Details](../AUTORESEARCH/01-11-2026%20Halo%20Stage%20Configurator/README.md#part-b-halo-stage-ui).
+
+**1 November — Debug is set by the URL; emulated board (Part A, committed `0006933` on
 branch `debug-emulated-board`).** `?debug=1` turns Debug on for the browser tab and
 `?debug=0` turns it off. The tab remembers the setting and keeps `?debug=1` in the
 address bar. This replaces editing `DEBUG_ENABLED` in `src/config/debug.ts`. Builds

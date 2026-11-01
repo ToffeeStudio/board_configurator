@@ -1,38 +1,122 @@
 import React, {useMemo} from 'react';
 import styled from 'styled-components';
-import {Link, useLocation} from 'wouter';
+import {useLocation} from 'wouter';
 import PANES from '../../utils/pane-config';
 import {useAppSelector} from 'src/store/hooks';
 import {getShowDesignTab} from 'src/store/settingsSlice';
+import {getSelectedDefinition} from 'src/store/definitionsSlice';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import {CategoryIconContainer} from '../panes/grid';
-import GlowButton from '../toffee_studio/GlowButton/GlowButton';
-import GlowContainer from '../toffee_studio/GlowContainer/GlowContainer';
-import GlowTooltip from '../toffee_studio/GlowTooltip/GlowTooltip';
 import {ErrorLink, ErrorsPaneConfig} from '../panes/errors';
-import {ExternalLinks} from './external-links';
-import {FIRMWARE_PATH} from '../../config/debug';
+import {DEBUG_ENABLED, FIRMWARE_PATH} from '../../config/debug';
+import {EmulatedBoardStatus, useEmulatedBoardConnected} from '../toffee_studio/emulated-board';
+import {focusRing, glass, glowEdge, HALO} from '../toffee_studio/halo/halo-style';
 
 const {DEBUG_PROD, MODE, DEV} = import.meta.env;
 const showDebugPane = MODE === 'development' || DEBUG_PROD === 'true' || DEV;
 
-const GlobalContainer = styled.div`
-  width: 300px;
-  height: 100vh;
-  padding: 0px 48px;
-  border-right: 1px solid var(--border_color_cell);
+// Halo Stage sidebar: a glass panel with the brand, the real navigation list and the board status.
+const Sidebar = styled.aside`
+  ${glass}
+  flex-shrink: 0;
+  width: 256px;
+  margin: 24px 0 24px 24px;
+  box-sizing: border-box;
+  border-radius: 18px;
+  padding: 20px 16px 16px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg_outside-accent);
-  row-gap: 12px;
-  flex-shrink: 0;
-  
-  /* Ensure this sits above the fixed background overlay (z-index 10) */
+  gap: 10px;
+  color: ${HALO.text};
+
+  /* Above the board's case overlay, which extends sideways past the main area. */
   position: relative;
   z-index: 20;
 `;
+
+const Brand = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 14px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  &::before {
+    content: '';
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, ${HALO.lavender}, #7800f5);
+    box-shadow: 0 0 14px rgba(120, 0, 245, 0.6);
+  }
+`;
+
+const NavList = styled.nav`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 2px;
+  margin: -2px;
+`;
+
+const NavItem = styled.button<{$on: boolean}>`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 16px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 1px solid ${HALO.line};
+  background: rgba(9, 4, 30, 0.6);
+  color: ${HALO.text};
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  ${focusRing}
+  &:hover {
+    border-color: #5a4796;
+  }
+  svg {
+    width: 18px;
+    flex: none;
+  }
+  ${(props) => props.$on && glowEdge}
+`;
+
+const Status = styled.div`
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px 4px;
+  font-size: 13px;
+  color: ${HALO.muted};
+`;
+
+const StatusDot = styled.span<{$on: boolean}>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: ${(props) => (props.$on ? '#3ee08a' : '#5d5675')};
+  box-shadow: ${(props) => (props.$on ? '0 0 8px #3ee08a' : 'none')};
+`;
+
+function BoardStatus() {
+  const emulated = useEmulatedBoardConnected();
+  const definition = useAppSelector(getSelectedDefinition);
+  if (DEBUG_ENABLED && emulated) return <Status><EmulatedBoardStatus /></Status>;
+  return (
+    <Status>
+      <StatusDot $on={!!definition} />
+      {definition ? `${definition.name} connected` : 'No board connected'}
+    </Status>
+  );
+}
 
 export const UnconnectedGlobalMenu = () => {
   const showDesignTab = useAppSelector(getShowDesignTab);
@@ -44,63 +128,29 @@ export const UnconnectedGlobalMenu = () => {
         if (pane.key === 'design' && !showDesignTab) return null;
         if (pane.key === 'debug' && !showDebugPane) return null;
         return (
-          <GlowButton
+          <NavItem
             key={pane.key}
+            type="button"
+            $on={pane.path === location}
+            aria-current={pane.path === location ? 'page' : undefined}
             onClick={() => pane.path === FIRMWARE_PATH ? window.location.assign(pane.path + '/') : navigate(pane.path)}
-            forceOn={pane.path === location}
-            sx={{ fontSize: "16px" }}
           >
-            <div style={{
-              display: "flex",
-              justifyContent: "center",
-              gap: "10px",
-              padding: "2px",
-              transform: "translateX(-12px)",
-              width: "100%",
-              fontWeight: 600
-            }}>
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minWidth: "42px" }}>
-                <FontAwesomeIcon size={'md'} icon={pane.icon} />
-              </div>
-              {pane.title}
-            </div>
-          </GlowButton>
+            <FontAwesomeIcon icon={pane.icon} />
+            {pane.title}
+          </NavItem>
         );
       },
     );
   }, [location, navigate, showDesignTab]);
 
   return (
-    <React.Fragment>
-      <GlobalContainer>
-        <GlowContainer
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            backgroundColor: "black", 
-            borderRadius: "8px",
-            height: "calc(100% - 64px)", 
-            width: "100%"
-          }}
-        >
-          <div style={{
-            boxSizing: "border-box",
-            width: "100%",
-            height: "100%",
-            padding: "18px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "12px",
-            alignItems: "stretch",
-            overflowY: "auto", 
-            maskImage: "linear-gradient(to bottom, black 90%, transparent 100%)",
-          }}>
-            <ErrorLink />
-            {Panes}
-            {/* <ExternalLinks /> */}
-          </div>
-        </GlowContainer>
-      </GlobalContainer>
-    </React.Fragment>
+    <Sidebar>
+      <Brand>Toffee Studio</Brand>
+      <NavList aria-label="Pages">
+        <ErrorLink />
+        {Panes}
+      </NavList>
+      <BoardStatus />
+    </Sidebar>
   );
 };

@@ -32,6 +32,7 @@ import {getV3MenuComponents} from 'src/store/menusSlice';
 import {getIsMacroFeatureSupported} from 'src/store/macrosSlice';
 import {useAppDispatch} from 'src/store/hooks';
 import { GlowingMenu } from '../toffee_studio/GlowingMenu/GlowingMenu';
+import {glass} from '../toffee_studio/halo/halo-style';
 
 // --- STYLED COMPONENTS MOVED OUTSIDE ---
 
@@ -57,6 +58,16 @@ const fadeSlideIn = keyframes`
     opacity: 1;
     transform: translateY(0);
   }
+`;
+
+// Halo Stage glass panel around the selected menu.
+const ContentPanel = styled.div`
+  ${glass}
+  flex: 1;
+  overflow: auto;
+  pointer-events: all;
+  position: relative;
+  border-radius: 20px;
 `;
 
 // We extend Grid here to preserve the "display: grid" context for children
@@ -213,13 +224,13 @@ const ConfigureGrid = () => {
           />
         </HorizontalMenuContainer>
 
-        <div style={{ flex: 1, overflow: 'auto', pointerEvents: 'all', position: 'relative' }}>
+        <ContentPanel>
           {SelectedPane && (
             <PaneAnimationWrapper key={selectedRow}>
               <SelectedPane />
             </PaneAnimationWrapper>
           )}
-        </div>
+        </ContentPanel>
       </div>
     </>
   );

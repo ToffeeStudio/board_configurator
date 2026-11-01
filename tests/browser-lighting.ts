@@ -207,9 +207,13 @@ const dragSlider = async (name: string, value: number) => {
   assert.ok(Math.abs(actual - value) <= 2, `Pointer drag ${name}: ${actual}, expected near ${value}`);
   return actual;
 };
+// Effects are chips in a named group ("Underglow effect", "Front effect", "Badge effect").
 const selectOption = async (name: string, label: string) => {
-  const control = page.getByRole('combobox', {name, exact: true});
-  await control.fill(label);
+  await page.getByRole('group', {name, exact: true}).getByRole('button', {name: label, exact: true}).click();
+};
+// The Per-Key LED key is still a searchable select.
+const selectKey = async (label: string) => {
+  await page.getByRole('combobox', {name: 'Front key', exact: true}).fill(label);
   await page.getByRole('option', {name: label, exact: true}).click();
 };
 try {
@@ -271,8 +275,8 @@ try {
   await verify('per-key maximum stays scaled by low global front brightness');
   await keyboardSlider('Key brightness', 17); expected.esc = 17;
   await verify('per-key keyboard input');
-  await selectOption('Front key', 'Space'); await slider('Key brightness', before.space);
-  await selectOption('Front key', 'Esc'); await slider('Key brightness', 17);
+  await selectKey('Space'); await slider('Key brightness', before.space);
+  await selectKey('Esc'); await slider('Key brightness', 17);
   await verify('key selection does not write another key');
   results.push('Key selection reads each actual override; Esc differs from Space');
   await Bun.sleep(1300);

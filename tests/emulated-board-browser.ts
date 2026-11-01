@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {writeFile} from 'node:fs/promises';
 import path from 'node:path';
+import chroma from 'chroma-js';
 const [dependencies, base, report, screenshot] = process.argv.slice(2);
 if (!dependencies || !base || !report || !screenshot) throw new Error('Required: DEPENDENCIES LOCAL_URL NEW_REPORT SCREENSHOT');
 assert.equal(new URL(base).hostname, '127.0.0.1');
@@ -73,7 +74,12 @@ try {
   for (const tab of ['Underglow', 'Front Lighting', 'Per-Key LED', 'Badge']) await text(tab).waitFor();
   await page.getByRole('button', {name: 'Debug: current budget'}).waitFor();
   await brightness(180);
-  check('Lighting page reads the emulated underglow; Per-Key LED and the power panel show in Debug; URL keeps ?debug=1');
+  await page.waitForFunction(() => document.querySelectorAll('canvas').length >= 66);
+  // Emulated underglow: hue 190, saturation 255.
+  const underglow = 'rgb(' + chroma.hsv(190 / 255 * 360, 1, 1).rgb().join(', ') + ')';
+  await page.waitForFunction((colour: string) =>
+    getComputedStyle(document.querySelector('[data-zone=rear] span')!).backgroundColor === colour, underglow);
+  check('Lighting page shows the board (66 keys) and reads the emulated underglow, which the ambient light takes; Per-Key LED and the power panel show in Debug; URL keeps ?debug=1');
 
   await page.locator('input[aria-label="Underglow brightness"]').evaluate((input: HTMLInputElement) => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '61');
