@@ -1,5 +1,4 @@
 import {CommandID, ToffeeHIDDevice, ToffeeLightingAPI} from './hid';
-import {DEBUG_ENABLED} from '../../config/debug';
 import {isEmulatedBoardConnected, isEmulatedDevice} from './emulated-board';
 import {usbStep} from './picoboot';
 
@@ -10,8 +9,7 @@ export type FirmwareChoice = {
 };
 export type ViaSettings = {layers: number; keymap: string; macros: string; layout: string};
 export const MODULE_FILTER = {vendorId: 0x1067, productId: 0x626d, usagePage: 0xff60, usage: 0x61};
-const requireDebug = () => {
-  if (!DEBUG_ENABLED) throw new Error('Firmware updater is disabled.');
+const requireRealModule = () => {
   if (isEmulatedBoardConnected()) throw new Error('Firmware updates need a real Module. Disconnect the emulated board first.');
 };
 const hex = (bytes: Uint8Array) => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
@@ -40,7 +38,7 @@ export async function validateFirmware(bytes: Uint8Array, expectedHash: string) 
   if (hash !== expectedHash) throw new Error('Firmware SHA-256 does not match the release manifest.');
 }
 export async function fetchFirmware(choice: FirmwareChoice) {
-  requireDebug();
+  requireRealModule();
   const response = await fetch('/firmware-downloads/' + choice.file);
   if (!response.ok) throw new Error('Firmware download failed.');
   const bytes = new Uint8Array(await response.arrayBuffer());
@@ -48,7 +46,7 @@ export async function fetchFirmware(choice: FirmwareChoice) {
   return bytes;
 }
 export async function chooseModule(): Promise<HIDDevice> {
-  requireDebug();
+  requireRealModule();
   const selected = await navigator.hid.requestDevice({filters: [MODULE_FILTER]});
   const modules = await grantedModules();
   if (selected.length !== 1 || modules.length !== 1 || modules[0] !== selected[0])
@@ -57,7 +55,7 @@ export async function chooseModule(): Promise<HIDDevice> {
   return selected[0];
 }
 export async function grantedModules(): Promise<HIDDevice[]> {
-  requireDebug();
+  requireRealModule();
   return (await navigator.hid.getDevices()).filter(d =>
     d.vendorId === MODULE_FILTER.vendorId && d.productId === MODULE_FILTER.productId &&
     d.collections.some(c => c.usagePage === MODULE_FILTER.usagePage && c.usage === MODULE_FILTER.usage));
@@ -68,7 +66,7 @@ export class FirmwareConnection {
   private busy = false;
   private failed = false;
   constructor(readonly device: HIDDevice) {
-    requireDebug();
+    requireRealModule();
     if (isEmulatedDevice(device)) throw new Error('Firmware updates need a real Module, not the emulated board.');
   }
   async via(code: number, payload = new Uint8Array()): Promise<Uint8Array> {
@@ -140,7 +138,7 @@ export class FirmwareConnection {
     if (JSON.stringify(actual) !== JSON.stringify(saved)) throw new Error('VIA settings readback differs from backup.');
   }
   async enterBootloader() {
-    requireDebug();
+    requireRealModule();
     if (this.busy || this.failed) throw new Error('Reconnect before entering bootloader.');
     const packet = new Uint8Array(32); packet.set([9, 0x79]);
     console.info('Firmware updater: requesting RP2 bootloader.');

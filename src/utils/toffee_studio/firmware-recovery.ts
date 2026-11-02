@@ -1,5 +1,4 @@
 import {createStore, get, update, values, UseStore} from 'idb-keyval';
-import {DEBUG_ENABLED} from '../../config/debug';
 import {FirmwareChoice, ViaSettings, validateFirmware, validateSettings} from './firmware-update';
 import {FLASH_BASE, SECTOR} from './picoboot';
 
@@ -12,7 +11,6 @@ export type FirmwareRecovery = {
 type LegacyRecovery = Omit<FirmwareRecovery, 'version' | 'targetImage' | 'originalSha256' | 'flashBase'> & {version?: undefined};
 let store: UseStore;
 function recoveryStore() {
-  if (!DEBUG_ENABLED) throw new Error('Firmware recovery tools are disabled.');
   // Separate from VIA preferences and manual measurements. Never uploaded.
   return store ||= createStore('toffee-firmware-recovery-v1', 'backups');
 }

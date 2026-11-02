@@ -1,9 +1,17 @@
 # Toffee board configurator
 
-Current handover: **1 November 2026 (Australia/Sydney)**. This is the VIA fork
+Current handover: **2 November 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
 
-**1 November — Halo Stage UI (Part B, local, uncommitted on `debug-emulated-board`).**
+**2 November — the firmware updater stays public.** `/toffee-firmware/` and
+`/toffee-firmware/?recovery=1` work without `?debug=1`, and **Firmware Update** stays in
+everyone's sidebar. Its static entry and release downloads ship in every build. It still
+refuses the emulated board. Key Tester, Lighting Debug, the emulated board and Per-Key LED
+stay behind Debug. Passing: 137 offline tests, the Debug-off script (now checks both sides),
+the build, and the updater, static-build and emulated-board browser runs (simulated hardware
+only).
+
+**1 November — Halo Stage UI (Part B, committed `4d610c3` on `debug-emulated-board`).**
 The layout follows 01 Halo Stage:
 
 - a glass sidebar with the same navigation list and a board status line;
@@ -27,8 +35,8 @@ about a Debug-off rebuild no longer apply. Debug now also gates the Lighting pag
 Per-Key LED tab. In Debug, **Connect emulated board** (under Connect Keyboard)
 connects an in-memory Module. It answers VIA and Toffee lighting commands, hides real
 boards while connected and survives reloads in the tab. The firmware updater and
-Lighting Debug refuse it. **Before deploying:** the live updater will need `?debug=1`
-(`/toffee-firmware/?debug=1`, `?recovery=1&debug=1`). Passing: 134 offline tests, the
+Lighting Debug refuse it. (The updater needed `?debug=1` here; since 2 November it is
+public again, see above.) Passing: 134 offline tests, the
 Debug-off script, the build, and the browser runs (simulated hardware only). The same
 11 TypeScript errors remain. No hardware was touched, and nothing was pushed or
 deployed. [Details and evidence](../AUTORESEARCH/01-11-2026%20Halo%20Stage%20Configurator/README.md).

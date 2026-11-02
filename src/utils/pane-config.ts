@@ -63,12 +63,13 @@ export default [
     path: '/toffee-lighting',
     title: 'Lighting',
   },
+  {
+    key: 'firmware-update', component: FirmwareUpdate, icon: faGear,
+    path: FIRMWARE_PATH, title: 'Firmware Update',
+  },
   ...(DEBUG_ENABLED ? [{
     key: 'test', component: Test, icon: faStethoscope,
     path: KEY_TESTER_PATH, title: 'Key Tester',
-  }, {
-    key: 'firmware-update', component: FirmwareUpdate, icon: faGear,
-    path: FIRMWARE_PATH, title: 'Firmware Update',
   }, {
     key: 'toffee-debug', component: ToffeeDebug, icon: faBug,
     path: MEASUREMENT_PATH, title: 'Lighting Debug',

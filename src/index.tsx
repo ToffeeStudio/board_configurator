@@ -15,10 +15,9 @@ const elem = document.getElementById('root');
 if (elem) {
   if (window.location.pathname.replace(/\/+$/, '') === FIRMWARE_PATH) {
     // Do not import Redux/VIA/theme initialization or GLTF preloads in updater.
+    // Public page: it does not depend on the Debug switch.
     const root = createRoot(elem);
-    if (DEBUG_ENABLED) {
-      import('./components/panes/firmware-update').then(({FirmwareUpdate}) => root.render(<FirmwareUpdate/>));
-    } else root.render(<p>Debug mode is disabled.</p>);
+    import('./components/panes/firmware-update').then(({FirmwareUpdate}) => root.render(<FirmwareUpdate/>));
   } else if (DEBUG_ENABLED) {
     // Reconnect the emulated board (if this tab had it) before the app scans for boards.
     import('./utils/toffee_studio/emulated-board')

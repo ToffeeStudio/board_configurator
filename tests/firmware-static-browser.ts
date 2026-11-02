@@ -35,8 +35,8 @@ await page.addInitScript(() => {
 try {
   assert.equal((await fetch(base + '/toffee-lighting')).status, 404);
   assert.equal((await fetch(base + '/toffee-firmware', {redirect: 'manual'})).status, 308);
-  // The updater is a Debug page: ?debug=1 switches it on, and the directory redirect keeps it.
-  for (const address of ['/toffee-firmware?debug=1', '/toffee-firmware/?debug=1']) {
+  // The updater is public: it does not need ?debug=1, and ?debug=0 does not hide it.
+  for (const address of ['/toffee-firmware', '/toffee-firmware/', '/toffee-firmware/?debug=0']) {
     const response = await page.goto(base + address);
     assert.equal(response!.status(), 200);
     await page.getByRole('heading', {name: 'Module firmware update', exact: true}).waitFor();
@@ -45,6 +45,9 @@ try {
     await page.getByRole('heading', {name: 'Module firmware update', exact: true}).waitFor();
     checks.push(address + ': direct navigation and refresh work without SPA fallback');
   }
+  assert.equal((await page.goto(base + '/toffee-firmware/?recovery=1'))!.status(), 200);
+  await page.getByRole('heading', {name: 'Recover your keyboard', exact: true}).waitFor();
+  checks.push('/toffee-firmware/?recovery=1: recovery opens without Debug');
   assert.equal(requests.some(r => r.includes('normal-index') || r.includes('.glb')), false);
   assert.deepEqual(errors, []);
   await page.screenshot({path: screenshot, fullPage: true});

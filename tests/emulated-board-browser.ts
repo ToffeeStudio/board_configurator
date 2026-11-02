@@ -39,7 +39,7 @@ page.setDefaultTimeout(20000);
 page.on('pageerror', (error: Error) => errors.push(error.message));
 const check = (message: string) => {checks.push(message); console.info('EMULATED BOARD PASS:', message);};
 const text = (value: string) => page.getByText(value, {exact: true});
-const DEBUG_NAV = ['Key Tester', 'Firmware Update', 'Lighting Debug', 'Toffee Test [DEPRECATED]'];
+const DEBUG_NAV = ['Key Tester', 'Lighting Debug', 'Toffee Test [DEPRECATED]'];
 const nav = (name: string) => text(name).first(); // the sidebar comes first in the page
 const navCount = async () => (await Promise.all(DEBUG_NAV.map(name => text(name).count()))).reduce((a, b) => a + b, 0);
 const physicalCalls = () => page.evaluate(() => ({...(window as any).physicalHidCalls}));
@@ -52,10 +52,11 @@ try {
   await page.waitForTimeout(500);
   assert.equal(await text('Connect emulated board').count(), 0);
   assert.equal(await navCount(), 0);
+  assert.equal(await text('Firmware Update').count(), 1);
   await page.goto(new URL('/', base).href);
   await text('Connect Keyboard').waitFor();
   assert.equal(await text('Connect emulated board').count(), 0);
-  check('Debug off (?debug=0, then no parameter): no emulated-board button and no Debug navigation');
+  check('Debug off (?debug=0, then no parameter): no emulated-board button and no Debug navigation; Firmware Update stays');
 
   await page.goto(new URL('/?debug=1', base).href);
   await text('Connect emulated board').waitFor();

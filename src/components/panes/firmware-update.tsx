@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react';
 import styled from 'styled-components';
-import {DEBUG_ENABLED, FIRMWARE_PATH} from '../../config/debug';
+import {FIRMWARE_PATH} from '../../config/debug';
 import {chooseModule, fetchFirmware, grantedModules, FirmwareChoice, FirmwareConnection} from '../../utils/toffee_studio/firmware-update';
 import {chooseBootloader, flashBrowserFirmware, grantedBootloader} from '../../utils/toffee_studio/firmware-webusb';
 import {FirmwareRecovery, readRecoveries, recoveryHash, saveRecovery} from '../../utils/toffee_studio/firmware-recovery';
@@ -26,9 +26,6 @@ const Page = styled.main`
 `;
 const pause = () => new Promise(resolve => setTimeout(resolve, 250));
 export function FirmwareUpdate() {
-  return DEBUG_ENABLED ? <FirmwareUpdateContent/> : <p>Debug mode is disabled.</p>;
-}
-function FirmwareUpdateContent() {
   const usb = (navigator as Navigator & {usb?: BrowserUSB}).usb;
   const recovery = new URLSearchParams(location.search).has('recovery');
   const [choices, setChoices] = useState<FirmwareChoice[]>([]);
