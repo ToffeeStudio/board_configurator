@@ -2,6 +2,11 @@
 
 For the Windows firmware updater, see [Toffee Module Windows Setup](tools/windows-winusb-setup/README.md).
 
+**11 November — Lighting Debug button receives mouse clicks.** The Lighting
+controls now sit above the keyboard preview, which otherwise overlaps the
+current-budget button and intercepts clicks. The full-app browser check opens
+and closes Debug at three desktop sizes and verifies that settings are unchanged.
+
 **11 November — additional 500 mA USB firmware option.** The updater offers
 **500 mA USB · 450 mA cap** (profile15). It limits estimated whole-board draw to
 450 mA, including a fitted 75 mA baseline, leaving a 375 mA LED budget and

@@ -18,6 +18,8 @@ export const Icon: FC = () => <FontAwesomeIcon icon={faLightbulb} />;
 // header. The pane holds the Debug power panel and the control bar, which sits at the bottom.
 const LightingPane = styled(Pane)`
   background: transparent;
+  /* The board preview extends below its layout box; controls must receive clicks. */
+  z-index: 3;
   overflow: auto;
   gap: 12px;
   padding-bottom: 4px;

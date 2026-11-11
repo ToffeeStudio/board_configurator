@@ -82,6 +82,19 @@ try {
     getComputedStyle(document.querySelector('[data-zone=rear] span')!).backgroundColor === colour, underglow);
   check('Lighting page shows the board (66 keys) and reads the emulated underglow, which the ambient light takes; Per-Key LED and the power panel show in Debug; URL keeps ?debug=1');
 
+  const beforeDebug = await emulatedState();
+  for (const viewport of [{width: 1440, height: 900}, {width: 1366, height: 768}, {width: 1280, height: 720}]) {
+    await page.setViewportSize(viewport);
+    // A visible button can still be covered by the board preview. Use real pointer clicks.
+    await page.getByRole('button', {name: 'Debug: current budget', exact: true}).click();
+    await page.getByTestId('power-requested').waitFor();
+    await page.getByRole('button', {name: 'Hide Debug', exact: true}).click();
+    assert.equal(await page.getByTestId('power-requested').count(), 0);
+  }
+  assert.deepEqual(await emulatedState(), beforeDebug);
+  await page.setViewportSize({width: 1440, height: 900});
+  check('Debug opens and closes by mouse at three desktop sizes without changing lighting settings');
+
   await page.locator('input[aria-label="Underglow brightness"]').evaluate((input: HTMLInputElement) => {
     Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '61');
     input.dispatchEvent(new Event('input', {bubbles: true}));
