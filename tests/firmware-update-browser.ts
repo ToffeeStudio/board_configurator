@@ -33,7 +33,7 @@ try {
   const html = await (await fetch(fixture, {headers: {accept: '*/*'}})).text();
   await page.route(fixture, (route: any) => route.fulfill({contentType: 'text/html', body: html}));
   const manifest = await (await fetch(new URL('/firmware-downloads/manifest.json', base))).json();
-  for (const mode of ['normal', 'manual', 'current-unlimited']) {
+  for (const mode of ['normal', 'manual', 'current-unlimited', 'usb-500ma']) {
     await ready(); await page.getByLabel('Firmware version').selectOption(mode);
     assert.equal(await page.evaluate(() => (window as any).firmwareFixture.packets.length), 0);
     await page.evaluate((mode: string) => {(window as any).updaterFixture.usbGranted = mode !== 'manual';}, mode);
@@ -67,9 +67,9 @@ try {
     check(mode + ': complete automatic flash, original sectors archived first, exact bytes, single erase/reboot and VIA restore');
   }
   await ready();
-  assert.equal(await page.locator('select[aria-label="Recovery backup"] option').count(), 4);
+  assert.equal(await page.locator('select[aria-label="Recovery backup"] option').count(), 5);
   assert.equal(await page.evaluate(() => (window as any).firmwareFixture.packets.length), 0);
-  check('Three separate private backups survive reload; reload sends no HID commands');
+  check('Four separate private backups survive reload; reload sends no HID commands');
   await page.evaluate(() => {
     (window as any).updaterFixture.usbGranted = true;
     (window as any).updaterFixture.hidAfterReboot = false;

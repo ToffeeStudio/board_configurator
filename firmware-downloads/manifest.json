@@ -31,5 +31,16 @@
     "testBuild": null,
     "file": "current-unlimited.uf2",
     "sha256": "15fbb706b3814614716d7862e076a8785ac4bd438d2cbc51f4155c819b7b8a12"
+  },
+  {
+    "id": "usb-500ma",
+    "name": "500 mA USB · 450 mA cap",
+    "description": "Limits estimated whole-board current to 450 mA, leaving 50 mA nominal headroom for a 500 mA USB port. Automatically dims lighting as needed. Keeps saved settings, startup fade and the both-Shift lighting reset. Actual current is not measured; physical port testing is pending.",
+    "profile": 15,
+    "lightingProtocol": 3,
+    "mode": "normal",
+    "testBuild": null,
+    "file": "usb-500ma.uf2",
+    "sha256": "491fed1ca1f24bba0631602d6e233c308a0458522ae4f703fa073572512bc36c"
   }
 ]

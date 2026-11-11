@@ -5,9 +5,9 @@ import {FirmwareFakeDevice} from './firmware-fake-device';
 import {ToffeeHIDDevice, ToffeeLightingAPI} from '../src/utils/toffee_studio/hid';
 const manifest: FirmwareChoice[] = JSON.parse(readFileSync('firmware-downloads/manifest.json', 'utf8'));
 const connection = (device: FirmwareFakeDevice) => new FirmwareConnection(device as unknown as HIDDevice);
-test('all three complete bundled UF2s match their release hashes', async () => {
+test('all four complete bundled UF2s match their release hashes', async () => {
   for (const entry of manifest) await validateFirmware(new Uint8Array(readFileSync('firmware-downloads/' + entry.file)), entry.sha256);
-  expect(manifest.map(v => v.profile)).toEqual([13, 0x8006, 14]);
+  expect(manifest.map(v => v.profile)).toEqual([13, 0x8006, 14, 15]);
 });
 test('truncation, invalid blocks and changed image hashes fail closed', async () => {
   const image = new Uint8Array(readFileSync('firmware-downloads/normal.uf2'));
@@ -81,6 +81,19 @@ test('older normal recovery retains cap200 and new normal refuses a cap200 image
   await expect(connection(legacy).verify({...manifest[0], profile: 11})).rejects.toThrow('restarted');
   const wrong = new FirmwareFakeDevice(); wrong.frontBadgeMax = 200;
   await expect(connection(wrong).verify(manifest[0])).rejects.toThrow('does not match');
+});
+test('500 mA USB profile requires the 450 mA whole-board cap before settings restoration', async () => {
+  const choice = manifest.find(entry => entry.id === 'usb-500ma')!;
+  const wrong = new FirmwareFakeDevice(); wrong.profile = 15;
+  await expect(connection(wrong).verify(choice)).rejects.toThrow('does not match');
+  expect(wrong.packets.some(p => [3, 0x13, 0x0f].includes(p[0]))).toBe(false);
+  const matching = new FirmwareFakeDevice(); matching.profile = 15; matching.boardLimitMa = 450;
+  const power = await new ToffeeLightingAPI(new ToffeeHIDDevice(matching as unknown as HIDDevice)).getPowerStatus();
+  expect(power.boardLimitMa).toBe(450); expect(power.ledBudgetMa).toBe(375);
+  expect(power.currentUnlimited).toBe(false);
+  // Reach uptime verification only after the real profile/budget checks accept it.
+  matching.restarted = true;
+  await expect(connection(matching).verify(choice)).rejects.toThrow('restarted');
 });
 test('old normal firmware cannot masquerade as the new animation build', async () => {
   const device = new FirmwareFakeDevice(); device.lightingProtocol = 2;

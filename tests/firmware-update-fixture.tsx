@@ -16,8 +16,10 @@ const usb = new FirmwareFakeUSB(() => {
   fixture.rebooted = true;
   device.booted = false;
   device.keymap.fill(0);
-  device.mode = (document.querySelector('select[aria-label="Firmware version"]') as HTMLSelectElement).value;
-  device.profile = {normal: 13, manual: 0x8006, 'current-unlimited': 14}[device.mode as 'normal'];
+  const choice = (document.querySelector('select[aria-label="Firmware version"]') as HTMLSelectElement).value;
+  device.mode = choice === 'usb-500ma' ? 'normal' : choice;
+  device.profile = {normal: 13, manual: 0x8006, 'current-unlimited': 14, 'usb-500ma': 15}[choice as 'normal'];
+  device.boardLimitMa = choice === 'usb-500ma' ? 450 : 940;
   device.lightingProtocol = device.mode === 'manual' ? 2 : 3;
 });
 usb.corruptReadback = scenario === 'readback-failure';

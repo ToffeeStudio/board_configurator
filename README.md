@@ -2,6 +2,14 @@
 
 For the Windows firmware updater, see [Toffee Module Windows Setup](tools/windows-winusb-setup/README.md).
 
+**11 November — additional 500 mA USB firmware option.** The updater offers
+**500 mA USB · 450 mA cap** (profile15). It limits estimated whole-board draw to
+450 mA, including a fitted 75 mA baseline, leaving a 375 mA LED budget and
+50 mA nominal headroom below the configured USB allowance. Normal startup,
+lighting settings and both-Shift rescue are retained. Existing firmware choices
+and the default are unchanged. Current is estimated, not sensed; physical
+current and affected-port testing remain pending.
+
 Current handover: **2 November 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
 
@@ -572,7 +580,7 @@ or a way to revoke already downloaded files. Debug code must not be moved into
 
 `firmware-downloads/` is the explicit release catalogue; firmware hashes are
 validated before a boot request. To prepare another release, run
-`bun scripts/package-firmware.ts NORMAL_UF2 MANUAL_UF2 UNLIMITED_UF2 FIRMWARE_ROOT NEW_OUTPUT_DIRECTORY`
+`bun scripts/package-firmware.ts NORMAL_UF2 MANUAL_UF2 UNLIMITED_UF2 USB_500MA_UF2 FIRMWARE_ROOT NEW_OUTPUT_DIRECTORY`
 with inspected, verified images; update catalogue identities and tests when
 adding a new profile. Package generation never connects to USB. The package
 README lists exact corresponding GPL source commits and build flags. Publish

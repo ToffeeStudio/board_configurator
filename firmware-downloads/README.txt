@@ -2,10 +2,10 @@ Toffee Module firmware / macOS native updater
 
 Close all configurator tabs, rescue loops and other HID clients. Connect only
 the intended Module. Unlimited variants can overload the board: watch the
-physical meter. The 940 mA limit is an ESTIMATE, not an onboard current sensor.
+physical meter. Current limits are ESTIMATES, not onboard current measurements.
 
 Choices:
-The two normal variants use the current estimate fitted specifically to repaired
+The three normal variants use the current estimate fitted specifically to repaired
 PCB-B:75 mA baseline and nine RGB coefficients. This is not a universal A/B fit.
 They include lighting-v3:45 front options and independent badge animations.
 Earlier normal profile11 was flashed on22 October, then validated against100 additional
@@ -15,7 +15,7 @@ passed. Physical cold-power, sleep/wake and electrical/thermal checks remain ope
 The current profiles13/14 lower the shared front/badge output cap from200 to190
 at Ethan's request, with the same estimator coefficients and940mA normal limit.
 Both new images are build/host-tested; no new physical flash was performed.
-Both normal variants now also support a firmware-level lighting reset: hold
+All normal variants also support a firmware-level lighting reset: hold
 both physical Shift switches before plugging in. All three brightness settings
 are saved as zero before lighting starts; colours/effects, per-key overrides,
 VIA keymaps and macros are preserved. VIA remapping cannot disable this chord.
@@ -29,6 +29,11 @@ manual.uf2: manual build0x26101002/profile0x8006; no output/current cap or timeo
   starts dark, test changes not saved, older informational estimator.
 current-unlimited.uf2: normal profile14, current limit removed ONLY; keeps
   front/badge190, normal saves and startup. Saved high output can return!
+usb-500ma.uf2: normal profile15, 450 mA estimated whole-board limit, including
+  the fitted 75 mA baseline (375 mA LED budget). Leaves 50 mA nominal headroom
+  below a configured 500 mA USB allowance. Keeps front/badge190, saves, startup
+  fade and both-Shift rescue. Actual current is not measured. This new option
+  is build/host-tested; physical current and affected-port tests are pending.
 
 Browser:
 Use desktop Chrome/Edge with WebHID and WebUSB on HTTPS or localhost. Choose a
@@ -80,6 +85,7 @@ screenless-pcb branch. Exact corresponding source checkpoints:
   normal.uf2: e66f75d5c902a183141da26d86e0f4f777a63653
   manual.uf2: 5b96a707636bb8ec70a2ba831da1b6eec382d7c6
   current-unlimited.uf2: e66f75d5c902a183141da26d86e0f4f777a63653
+  usb-500ma.uf2: 99889d846b61cd86c38589c0c46574891507c88e
   bundled Python updater: e66f75d5c902a183141da26d86e0f4f777a63653
 The matching source checkpoints must be available on screenless-pcb before
 publishing these binaries. Private settings and recovery images are not bundled.
@@ -95,6 +101,7 @@ These commands build only; they do not flash or change a connected board:
   normal: make toffee_studio/module:via -j1
   manual: make toffee_studio/module:via -j1 MODULE_EXTENSIVE_TEST=yes MODULE_POWER_CALIBRATION=yes MODULE_MANUAL_MEASUREMENT=yes MODULE_TEST_BUILD_ID=0x26101002
   current-unlimited: make toffee_studio/module:via -j1 MODULE_CURRENT_UNLIMITED=yes
+  usb-500ma: make toffee_studio/module:via -j1 MODULE_USB_500MA=yes
 Output: toffee_studio_module_via.uf2. Read the Module rules.mk and board README
 for build contracts and experimental-mode limitations. Source and library
 licenses are retained in the source repository; do not redistribute binaries

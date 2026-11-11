@@ -26,7 +26,7 @@ async function readRecord(raw: FirmwareRecovery | LegacyRecovery): Promise<Firmw
     flashBase: FLASH_BASE, originalSha256: raw.originalSectors ? await recoveryHash(raw.originalSectors) : null} : raw;
   if (record.version !== 2 || !record.id || !record.createdAt || record.flashBase !== FLASH_BASE ||
       !['prepared', 'writing', 'verified', 'complete'].includes(record.status) ||
-      !['normal', 'manual', 'current-unlimited'].includes(record.choice.id) ||
+      !['normal', 'manual', 'current-unlimited', 'usb-500ma'].includes(record.choice.id) ||
       record.choice.file !== record.choice.id + '.uf2' || !/^[0-9a-f]{64}$/.test(record.choice.sha256))
     throw new Error('Invalid local firmware recovery record. Keep the backup and contact support.');
   if (record.settings) validateSettings(record.settings);

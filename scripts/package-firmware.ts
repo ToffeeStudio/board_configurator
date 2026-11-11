@@ -3,15 +3,16 @@ import {readFileSync, mkdirSync, copyFileSync, writeFileSync, existsSync} from '
 import {resolve, join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-const [normal, manual, unlimited, firmwareRoot, output] = process.argv.slice(2);
-if (!normal || !manual || !unlimited || !firmwareRoot || !output)
-  throw new Error('Required: NORMAL_UF2 MANUAL_UF2 UNLIMITED_UF2 FIRMWARE_ROOT NEW_OUTPUT_DIRECTORY');
+const [normal, manual, unlimited, usb500ma, firmwareRoot, output] = process.argv.slice(2);
+if (!normal || !manual || !unlimited || !usb500ma || !firmwareRoot || !output)
+  throw new Error('Required: NORMAL_UF2 MANUAL_UF2 UNLIMITED_UF2 USB_500MA_UF2 FIRMWARE_ROOT NEW_OUTPUT_DIRECTORY');
 if (existsSync(output)) throw new Error('Output directory already exists; never replace a release.');
 mkdirSync(output, {recursive: true});
 const variants = [
   {id: 'normal', name: 'Normal · 940 mA', description: 'Profile13: repaired-PCB-B current estimate with front/badge output capped at 190/255. Keeps the 940 mA estimate limit, lighting v3, saved settings and startup fade. Hold both physical Shift keys at startup to save all lighting brightness at zero.', source: normal, profile: 13, lightingProtocol: 3, mode: 'normal', testBuild: null},
   {id: 'manual', name: 'Unlimited measurement test', description: 'Build 0x26101002. Exact 0–255 output, no current limiter or timeout, starts dark, test lighting not saved. Uses the older informational estimator.', source: manual, profile: 0x8006, lightingProtocol: 2, mode: 'manual', testBuild: 0x26101002},
   {id: 'current-unlimited', name: 'Normal · no current limit', description: 'Profile14: the same repaired-PCB-B estimate with current limiting disabled and front/badge output capped at 190/255. Lighting v3, saves and startup fade retained. Hold both physical Shift keys at startup to save all lighting brightness at zero. Saved high output returns after ordinary restart. Not physically flashed.', source: unlimited, profile: 14, lightingProtocol: 3, mode: 'current-unlimited', testBuild: null},
+  {id: 'usb-500ma', name: '500 mA USB · 450 mA cap', description: 'Limits estimated whole-board current to 450 mA, leaving 50 mA nominal headroom for a 500 mA USB port. Automatically dims lighting as needed. Keeps saved settings, startup fade and the both-Shift lighting reset. Actual current is not measured; physical port testing is pending.', source: usb500ma, profile: 15, lightingProtocol: 3, mode: 'normal', testBuild: null},
 ];
 const manifest = variants.map(({source, ...entry}) => {
   const data = readFileSync(source), file = entry.id + '.uf2';
@@ -27,4 +28,4 @@ writeFileSync(join(output, 'requirements.txt'), 'hid==1.0.6\npyusb==1.3.1\n');
 execFileSync('/usr/bin/zip', ['-q', 'module-firmware-and-updater.zip',
   'README.txt', 'LICENSE', 'requirements.txt', 'flash_module.py', 'led_discovery.py', 'manifest.json',
   ...manifest.map(v => v.file)], {cwd: resolve(output)});
-console.info('Packaged three UF2s and macOS Python updater:', resolve(output));
+console.info('Packaged four UF2s and macOS Python updater:', resolve(output));

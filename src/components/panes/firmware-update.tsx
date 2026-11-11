@@ -61,7 +61,7 @@ export function FirmwareUpdate() {
     fetch('/firmware-downloads/manifest.json').then(async response => {
       if (!response.ok) throw new Error('Firmware catalogue unavailable.');
       const entries: FirmwareChoice[] = await response.json();
-      if (entries.length !== 3 || entries.some(v => !['normal', 'manual', 'current-unlimited'].includes(v.id) ||
+      if (entries.length !== 4 || entries.some(v => !['normal', 'manual', 'current-unlimited', 'usb-500ma'].includes(v.id) ||
           v.file !== v.id + '.uf2' || !/^[0-9a-f]{64}$/.test(v.sha256) || ![2,3].includes(v.lightingProtocol)))
         throw new Error('Invalid firmware catalogue.');
       setChoices(entries);

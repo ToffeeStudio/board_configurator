@@ -21,6 +21,13 @@ const fresh = (): FirmwareRecovery => ({version: 2, id: 'test', createdAt: '2026
   targetImage, originalSectors: null, originalSha256: null, flashBase: 0x10000000,
   status: 'prepared', serial: null, verifiedBytes: null});
 beforeEach(() => {records.clear(); discardWrites = false;});
+test('500 mA USB firmware and its private settings survive a recovery reload', async () => {
+  const choice = JSON.parse(readFileSync('firmware-downloads/manifest.json', 'utf8')).find((entry: any) => entry.id === 'usb-500ma');
+  const targetImage = new Uint8Array(readFileSync('firmware-downloads/' + choice.file));
+  const record = {...fresh(), choice, targetImage};
+  await saveRecovery(record);
+  expect((await readRecoveries())[0]).toEqual(record);
+});
 test('exact image, original and settings survive each durable stage and reload', async () => {
   let record = fresh(); await saveRecovery(record);
   expect((await readRecoveries())[0].targetImage).toEqual(targetImage);

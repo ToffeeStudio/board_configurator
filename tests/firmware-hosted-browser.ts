@@ -24,6 +24,10 @@ try {
     assert.equal(response!.status(), 200);
     await page.getByRole('heading', {name: 'Module firmware update', exact: true}).waitFor();
     await page.getByRole('option', {name: 'Normal · 940 mA', exact: true}).waitFor({state: 'attached'});
+    await page.getByRole('option', {name: '500 mA USB · 450 mA cap', exact: true}).waitFor({state: 'attached'});
+    await page.getByLabel('Firmware version').selectOption('usb-500ma');
+    await page.getByText('Update details & saved backups', {exact: true}).click();
+    await page.getByText(/Limits estimated whole-board current to 450 mA/).waitFor();
     await page.getByText('Choose your firmware. We’ll install it and check your keyboard.', {exact: true}).waitFor();
     await page.waitForFunction(() => !document.querySelector<HTMLButtonElement>('button')?.disabled);
     assert.equal(await page.getByRole('button', {name: 'Update firmware', exact: true}).isEnabled(), true);

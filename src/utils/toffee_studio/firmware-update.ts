@@ -156,7 +156,8 @@ export class FirmwareConnection {
         power.currentUnlimited !== (choice.mode === 'current-unlimited') ||
         (choice.mode !== 'manual' && !(
           [9, 10, 11, 12].includes(choice.profile) && power.frontBadgeMax === 200 ||
-          [13, 14].includes(choice.profile) && power.frontBadgeMax === 190)))
+          [13, 14, 15].includes(choice.profile) && power.frontBadgeMax === 190)) ||
+        (choice.profile === 15 && (power.boardLimitMa !== 450 || power.baseMa !== 75 || power.marginMa !== 0)))
       throw new Error('Connected firmware does not match the selected profile/mode. No backup written.');
     if (choice.testBuild !== null) {
       const [status, data] = await hid.executeCommand(0x86 as CommandID);
