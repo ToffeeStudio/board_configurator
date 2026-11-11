@@ -249,6 +249,15 @@ export function FirmwareUpdate() {
       {phase === 'failed' && <p className="warning">Update stopped. Your backup is retained in Update details. The update has not been confirmed complete.</p>}
       {!busy && (phase === 'failed' || !recovery && phase === 'idle') && <p><a href={FIRMWARE_PATH + '/?recovery=1'}>{phase === 'failed' ? 'Reconnect and recover this update' : 'Recover an interrupted update'}</a></p>}
       {recovery && <p><small>If RP2 Boot is missing from the chooser, the keyboard may need its physical bootloader procedure. Reconnecting alone may not restart a partially written firmware. Contact support for your PCB’s procedure.</small></p>}
+      {!busy && (phase === 'idle' || phase === 'bootloader' || phase === 'failed') &&
+        <details className="support" open={phase === 'bootloader' && error ? true : undefined}>
+          <summary>Windows: RP2 Boot missing or won’t connect</summary>
+          <p><a href="/firmware-downloads/toffee-windows-setup-v1.exe" download>Download Toffee Windows Setup</a></p>
+          <p>If RP2 Boot is missing or can’t connect, cancel the USB chooser. Leave only this keyboard plugged in and keep this tab open. Run Windows Setup and approve the administrator prompt.</p>
+          <p>After setup succeeds, {phase === 'failed' ? 'open Reconnect and recover this update and select RP2 Boot when prompted.' :
+            recovery ? 'click Recover keyboard again and select RP2 Boot.' : 'click Allow bootloader access again and select RP2 Boot.'}</p>
+          <p><small>Setup uses the built-in Microsoft driver and does not update the keyboard. The setup app itself is unsigned, so Windows may warn or block it.</small></p>
+        </details>}
       <details className="support">
         <summary>Update details &amp; saved backups</summary>
         <p>{choice?.description}</p>

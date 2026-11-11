@@ -48,6 +48,20 @@ try {
   assert.equal((await page.goto(base + '/toffee-firmware/?recovery=1'))!.status(), 200);
   await page.getByRole('heading', {name: 'Recover your keyboard', exact: true}).waitFor();
   checks.push('/toffee-firmware/?recovery=1: recovery opens without Debug');
+  for (const route of ['/toffee-firmware/?recovery=1', '/toffee-firmware/']) {
+    await page.goto(base + route);
+    await page.getByText('Windows: RP2 Boot missing or won’t connect', {exact: true}).click();
+    const link = page.getByRole('link', {name: 'Download Toffee Windows Setup'});
+    const downloadPath = await link.getAttribute('href');
+    assert.equal(downloadPath, '/firmware-downloads/toffee-windows-setup-v1.exe');
+    const response = await fetch(base + downloadPath);
+    assert.equal(response.status, 200);
+    const data = Buffer.from(await response.arrayBuffer());
+    assert.equal(data.subarray(0, 2).toString('ascii'), 'MZ');
+    const release = Buffer.from(await Bun.file('firmware-downloads/toffee-windows-setup-v1.exe').arrayBuffer());
+    assert.ok(data.equals(release), 'The served setup must match the Windows release binary');
+    checks.push(route + ': Windows setup link serves the exact release binary');
+  }
   assert.equal(requests.some(r => r.includes('normal-index') || r.includes('.glb')), false);
   assert.deepEqual(errors, []);
   await page.screenshot({path: screenshot, fullPage: true});

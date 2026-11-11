@@ -2,7 +2,7 @@ import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import type {Plugin} from 'vite';
 const files = ['manifest.json', 'normal.uf2', 'manual.uf2', 'current-unlimited.uf2',
-  'module-firmware-and-updater.zip', 'flash_module.py', 'led_discovery.py', 'requirements.txt', 'README.txt', 'LICENSE'];
+  'toffee-windows-setup-v1.exe', 'module-firmware-and-updater.zip', 'flash_module.py', 'led_discovery.py', 'requirements.txt', 'README.txt', 'LICENSE'];
 // Not public/: only the listed release files are served, never the rest of firmware-downloads/.
 export function debugFirmwareAssets(): Plugin {
   const root = resolve('firmware-downloads');

@@ -1,5 +1,7 @@
 # Toffee board configurator
 
+For the Windows firmware updater, see [Toffee Module Windows Setup](tools/windows-winusb-setup/README.md).
+
 Current handover: **2 November 2026 (Australia/Sydney)**. This is the VIA fork
 for configuring the physical Toffee Module, not the customer shopfront.
 
