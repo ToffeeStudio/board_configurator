@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {installFactoryDriver} from './flasher/driver.mjs';
 import {configureDevices} from './devices.mjs';
 import {appUrl, isAppPage, isInstallerPage, serveRenderer} from './renderer.mjs';
-import {readModulePort, readUsbTarget} from './usb/topology.mjs';
+import {installerWindowsTimeoutMs, readModulePort, readUsbTarget} from './usb/topology.mjs';
 
 protocol.registerSchemesAsPrivileged([{scheme: 'toffee', privileges: {
   standard: true, secure: true, supportFetchAPI: true, corsEnabled: true,
@@ -123,7 +123,7 @@ if (!app.requestSingleInstanceLock()) {
         !isInstallerPage(event.senderFrame.url) || (mode !== 'module' && mode !== 'bootloader')) {
       throw new Error('USB installer qualification is unavailable.');
     }
-    return readUsbTarget(mode);
+    return readUsbTarget(mode, installerWindowsTimeoutMs);
   });
   ipcMain.handle('toffee:installer-driver', (event, location) => {
     if (!factory || process.platform !== 'win32' || !window ||

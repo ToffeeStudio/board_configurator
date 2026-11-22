@@ -1,13 +1,13 @@
 import {execFile} from 'node:child_process';
 import {join} from 'node:path';
 import {promisify} from 'node:util';
-import {readUsbTarget} from '../usb/topology.mjs';
+import {installerWindowsTimeoutMs, readUsbTarget} from '../usb/topology.mjs';
 
 const exec = promisify(execFile);
 const setup = 'toffee-windows-setup-v1.exe';
 
 export async function installFactoryDriver(location) {
-  const target = await readUsbTarget('bootloader');
+  const target = await readUsbTarget('bootloader', installerWindowsTimeoutMs);
   if (!target || (location && location !== target.location)) {
     throw new Error('Connect only the intended board in BOOTSEL on its original USB port.');
   }

@@ -5,6 +5,7 @@ import {promisify} from 'node:util';
 
 const exec = promisify(execFile);
 const options = {timeout: 3500, maxBuffer: 1024 * 1024, windowsHide: true};
+export const installerWindowsTimeoutMs = 60_000;
 const moduleId = '1067:626d';
 const bootloaderId = '2e8a:0003';
 
@@ -58,7 +59,7 @@ export function identifyModulePort(os, host, targets) {
   return identifyTarget(os, host, targets, 'module')?.location ?? null;
 }
 
-export async function readUsbTarget(mode) {
+export async function readUsbTarget(mode, windowsTimeoutMs) {
   if (process.platform === 'darwin') {
     const [host, usb] = await Promise.all([
       exec('/usr/sbin/ioreg', ['-rd1', '-c', 'IOPlatformExpertDevice'], options),
@@ -77,10 +78,16 @@ $targets = @(Get-PnpDevice -PresentOnly | Where-Object {
     $path = Get-PnpDeviceProperty -InstanceId $_.InstanceId -KeyName DEVPKEY_Device_LocationPaths -ErrorAction SilentlyContinue
     @{ InstanceId = $_.InstanceId; Paths = @($path.Data | Where-Object { $_ }) }
 })
-@{ HostId = (Get-ItemPropertyValue -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name MachineGuid); Targets = $targets } |
+$inventory = @{ HostId = (Get-ItemPropertyValue -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Cryptography' -Name MachineGuid); Targets = $targets } |
     ConvertTo-Json -Depth 5 -Compress
+[Console]::Out.WriteLine($inventory)
+[Environment]::Exit(0)
 `;
-    const {stdout} = await exec(powershell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command], options);
+    const {stdout} = await exec(powershell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command],
+      {...options, timeout: windowsTimeoutMs}).catch(error => {
+      console.warn('Windows USB inventory failed:', error.signal ?? error.code);
+      throw new Error('Windows could not read the USB port. Keep only the intended board connected and retry.', {cause: error});
+    });
     const {HostId, Targets} = JSON.parse(stdout);
     return identifyTarget('win32', HostId, parseWindowsUsb(JSON.stringify(Targets)), mode);
   }
@@ -88,5 +95,5 @@ $targets = @(Get-PnpDevice -PresentOnly | Where-Object {
 }
 
 export async function readModulePort() {
-  return (await readUsbTarget('module'))?.location ?? null;
+  return (await readUsbTarget('module', options.timeout))?.location ?? null;
 }
