@@ -6,6 +6,7 @@ export type FirmwareRecovery = {
   version: 2; id: string; createdAt: string; choice: FirmwareChoice; settings: ViaSettings | null;
   status: 'prepared' | 'writing' | 'verified' | 'complete'; serial: string | null;
   targetImage: Uint8Array | null; originalSectors: Uint8Array | null; originalSha256: string | null;
+  usbLocation?: string;
   flashBase: number; verifiedBytes: number | null;
 };
 type LegacyRecovery = Omit<FirmwareRecovery, 'version' | 'targetImage' | 'originalSha256' | 'flashBase'> & {version?: undefined};
@@ -29,6 +30,8 @@ async function readRecord(raw: FirmwareRecovery | LegacyRecovery): Promise<Firmw
       !['normal', 'manual', 'current-unlimited', 'usb-500ma'].includes(record.choice.id) ||
       record.choice.file !== record.choice.id + '.uf2' || !/^[0-9a-f]{64}$/.test(record.choice.sha256))
     throw new Error('Invalid local firmware recovery record. Keep the backup and contact support.');
+  if (record.usbLocation !== undefined && !/^[0-9a-f]{64}$/.test(record.usbLocation))
+    throw new Error('Invalid USB location in the firmware backup.');
   if (record.settings) validateSettings(record.settings);
   if (record.targetImage) await validateFirmware(record.targetImage, record.choice.sha256);
   if (record.originalSectors) {
@@ -49,6 +52,7 @@ export async function saveRecovery(record: FirmwareRecovery) {
   await update<FirmwareRecovery | LegacyRecovery>(record.id, previous => {
     if (previous && (JSON.stringify(previous.choice) !== JSON.stringify(record.choice) ||
         JSON.stringify(previous.settings) !== JSON.stringify(record.settings) || previous.createdAt !== record.createdAt ||
+        previous.usbLocation !== record.usbLocation ||
         previous.serial !== null && previous.serial !== record.serial ||
         previous.originalSectors !== null && !sameBytes(previous.originalSectors, record.originalSectors) ||
         previous.version === 2 && previous.targetImage !== null && !sameBytes(previous.targetImage, record.targetImage)))

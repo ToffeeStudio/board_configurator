@@ -1,9 +1,9 @@
 import {createRoot} from 'react-dom/client';
-import {FirmwareUpdate} from '../src/components/panes/firmware-update';
+import {FirmwareUpdate} from '../src/features/firmware-installer/FirmwareUpdate';
 import {FirmwareFakeDevice} from './firmware-fake-device';
 import {FirmwareFakeUSB} from './firmware-fake-usb';
-import {readRecoveries, saveRecovery, recoveryHash, FirmwareRecovery} from '../src/utils/toffee_studio/firmware-recovery';
-import {FLASH_BASE, eraseImage, uf2Payload} from '../src/utils/toffee_studio/picoboot';
+import {readRecoveries, saveRecovery, recoveryHash, FirmwareRecovery} from '../src/features/firmware-installer/firmware-recovery';
+import {FLASH_BASE, eraseImage, uf2Payload} from '../src/features/firmware-installer/picoboot';
 import {createStore, del, set} from 'idb-keyval';
 const device = new FirmwareFakeDevice();
 // URL scenarios allow supervised browser testing without evaluating hidden app state.

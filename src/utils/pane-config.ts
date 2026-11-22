@@ -18,7 +18,7 @@ import {ErrorsPaneConfig} from '../components/panes/errors';
 import {ToffeeLighting} from '../components/panes/toffee-lighting';
 import {ToffeeDebug} from '../components/panes/toffee-debug';
 import {DEBUG_ENABLED, MEASUREMENT_PATH, FIRMWARE_PATH, KEY_TESTER_PATH} from '../config/debug';
-import {FirmwareUpdate} from '../components/panes/firmware-update';
+import {FirmwareUpdate} from '../features/firmware-installer/FirmwareUpdate';
 
 export default [
   {

@@ -12,8 +12,8 @@ mock.module('idb-keyval', () => ({
     if (!discardWrites) records.set(id, structuredClone(next));
   },
 }));
-const {saveRecovery, readRecoveries, recoveryHash} = await import('../src/utils/toffee_studio/firmware-recovery');
-import type {FirmwareRecovery} from '../src/utils/toffee_studio/firmware-recovery';
+const {saveRecovery, readRecoveries, recoveryHash} = await import('../src/features/firmware-installer/firmware-recovery');
+import type {FirmwareRecovery} from '../src/features/firmware-installer/firmware-recovery';
 const choice = JSON.parse(readFileSync('firmware-downloads/manifest.json', 'utf8'))[0];
 const targetImage = new Uint8Array(readFileSync('firmware-downloads/normal.uf2'));
 const fresh = (): FirmwareRecovery => ({version: 2, id: 'test', createdAt: '2026-10-21T00:00:00Z', choice,
@@ -41,12 +41,13 @@ test('exact image, original and settings survive each durable stage and reload',
 });
 test('original sectors, target release, identity and private settings cannot be replaced', async () => {
   const original = new Uint8Array(Math.ceil(targetImage.length / 2 / 4096) * 4096).fill(0x5a);
-  const record = {...fresh(), status: 'writing' as const, serial: 'TEST', originalSectors: original, originalSha256: await recoveryHash(original)};
+  const record = {...fresh(), status: 'writing' as const, serial: 'TEST', usbLocation: 'a'.repeat(64), originalSectors: original, originalSha256: await recoveryHash(original)};
   await saveRecovery(record);
   const partial = original.slice(); partial[0] ^= 1;
   for (const changed of [
     {...record, originalSectors: partial, originalSha256: await recoveryHash(partial)},
     {...record, serial: 'WRONG'}, {...record, settings: null},
+    {...record, usbLocation: 'b'.repeat(64)}, {...record, usbLocation: undefined},
     {...record, choice: {...choice, name: 'Different release'}},
   ]) await expect(saveRecovery(changed)).rejects.toThrow('immutable');
   expect((await readRecoveries())[0]).toEqual(record);
@@ -61,6 +62,7 @@ test('legacy backup is retained with missing image explicit; exact target can be
   expect((await readRecoveries())[0].targetImage).toEqual(image);
 });
 test('corrupt image/original, invalid verification and failed persistence stop explicitly', async () => {
+  await expect(saveRecovery({...fresh(), usbLocation: 'bad-port'})).rejects.toThrow('Invalid USB location');
   const bad = targetImage.slice(); bad[100] ^= 1;
   await expect(saveRecovery({...fresh(), targetImage: bad})).rejects.toThrow('SHA-256');
   const original = new Uint8Array(Math.ceil(targetImage.length / 2 / 4096) * 4096);

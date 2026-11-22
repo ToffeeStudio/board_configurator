@@ -4,6 +4,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {faLightbulb} from '@fortawesome/free-solid-svg-icons';
 import {Pane} from './pane';
 import {HaloLightingControls} from '../toffee_studio/halo/halo-lighting';
+import {PortBudgetControl} from '../../features/usb-power/PortBudgetControl';
 import {PowerDebug} from '../toffee_studio/power-debug';
 import {useAppSelector} from 'src/store/hooks';
 import {getSelectedKeyboardAPI} from 'src/store/devicesSlice';
@@ -33,6 +34,7 @@ export const ToffeeLighting: FC = () => {
   const device = keyboard ? keyboard.getHID()._hidDevice!._device : null;
   return (
     <LightingPane>
+      <PortBudgetControl />
       <PowerDebug device={device} />
       <HaloLightingControls />
     </LightingPane>

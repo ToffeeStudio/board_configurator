@@ -3,6 +3,9 @@ import Root from './containers/Root';
 import {updateCSSVariables} from './utils/color-math';
 import {getThemeModeFromStore, getThemeNameFromStore} from './utils/device-store';
 import {THEMES} from './utils/themes';
+import {startDesktopPower} from './features/usb-power/desktop-power';
+
+startDesktopPower();
 
 const elem = document.getElementById('root');
 if (elem) {

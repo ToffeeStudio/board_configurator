@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
 import {readFileSync} from 'node:fs';
-import {Picoboot,FLASH_BASE,uf2Payload,eraseImage, type PicobootDevice} from '../src/utils/toffee_studio/picoboot';
+import {Picoboot,FLASH_BASE,uf2Payload,eraseImage, type PicobootDevice} from '../src/features/firmware-installer/picoboot';
 class Usb {
   flash=new Uint8Array(0x100000).fill(0x5a); packets:Uint8Array[]=[];
   code=0;token=0;length=0;address=0;size=0;dataPending=false;xip=false;flashPrepared=false;

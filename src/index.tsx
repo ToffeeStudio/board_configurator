@@ -17,7 +17,7 @@ if (elem) {
     // Do not import Redux/VIA/theme initialization or GLTF preloads in updater.
     // Public page: it does not depend on the Debug switch.
     const root = createRoot(elem);
-    import('./components/panes/firmware-update').then(({FirmwareUpdate}) => root.render(<FirmwareUpdate/>));
+    import('./features/firmware-installer/FirmwareUpdate').then(({FirmwareUpdate}) => root.render(<FirmwareUpdate/>));
   } else if (DEBUG_ENABLED) {
     // Reconnect the emulated board (if this tab had it) before the app scans for boards.
     import('./utils/toffee_studio/emulated-board')

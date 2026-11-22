@@ -3,7 +3,7 @@ import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
 import {writeFile} from 'node:fs/promises';
 import path from 'node:path';
-import {uf2Payload} from '../src/utils/toffee_studio/picoboot';
+import {uf2Payload} from '../src/features/firmware-installer/picoboot';
 const [dependencies, base, report, screenshot] = process.argv.slice(2);
 if (!dependencies || !base || !report || !screenshot) throw new Error('Required: DEPENDENCIES LOCAL_URL NEW_REPORT SCREENSHOT');
 assert.equal(new URL(base).hostname, '127.0.0.1');

@@ -1,10 +1,11 @@
 import {useEffect, useRef, useState} from 'react';
 import styled from 'styled-components';
 import {FIRMWARE_PATH} from '../../config/debug';
-import {chooseModule, fetchFirmware, grantedModules, FirmwareChoice, FirmwareConnection} from '../../utils/toffee_studio/firmware-update';
-import {chooseBootloader, flashBrowserFirmware, grantedBootloader} from '../../utils/toffee_studio/firmware-webusb';
-import {FirmwareRecovery, readRecoveries, recoveryHash, saveRecovery} from '../../utils/toffee_studio/firmware-recovery';
-import {BrowserUSB, FLASH_BASE, PicobootDevice, usbStep} from '../../utils/toffee_studio/picoboot';
+import {chooseModule, fetchFirmware, grantedModules, FirmwareChoice, FirmwareConnection} from './firmware-update';
+import {chooseBootloader, flashBrowserFirmware, grantedBootloader} from './firmware-webusb';
+import {FirmwareRecovery, readRecoveries, recoveryHash, saveRecovery} from './firmware-recovery';
+import {requireInstallerTarget} from './desktop-target';
+import {BrowserUSB, FLASH_BASE, PicobootDevice, usbStep} from './picoboot';
 
 const Page = styled.main`
   box-sizing: border-box; position: fixed; inset: 0; overflow: auto; z-index: 40;
@@ -12,6 +13,8 @@ const Page = styled.main`
   font: 16px/1.5 system-ui, sans-serif;
   h1 {font-size: 30px; margin: 24px 0 8px;}
   p {font-size: 16px;} small {font-size: 13px; color: #bcb0cc;}
+  nav {display: flex; flex-wrap: wrap; gap: 8px 20px;}
+  nav [aria-current] {font-weight: bold;}
   section {padding: 24px; margin: 20px 0; border: 1px solid #423650; border-radius: 12px; background: #17121f;}
   button, select {font: inherit; color: inherit; border: 1px solid #88749f; border-radius: 7px; padding: 10px 14px; background: #2b203b; margin: 6px 10px 6px 0; max-width: 100%;}
   button {cursor: pointer; width: 100%; background: #c8aff0; color: #241632; font-weight: 650; margin: 12px 0 0;}
@@ -24,16 +27,26 @@ const Page = styled.main`
   summary {cursor: pointer; color: #bcb0cc;} .exports a {display: block; margin: 12px 0;}
   code {overflow-wrap: anywhere;} progress {width: 100%; accent-color: #b59bdc;}
 `;
+const desktop = typeof location !== 'undefined' && location.protocol === 'toffee:';
+
 const pause = () => new Promise(resolve => setTimeout(resolve, 250));
 export function FirmwareUpdate() {
+  const qualifyInstaller = desktop && Boolean(window.toffeeDesktop?.qualifyInstaller);
+  const installerDisabled = desktop && !qualifyInstaller;
   const usb = (navigator as Navigator & {usb?: BrowserUSB}).usb;
-  const recovery = new URLSearchParams(location.search).has('recovery');
+  const factory = Boolean(window.toffeeDesktop?.factory);
+  const params = new URLSearchParams(location.search);
+  const recovery = params.has('recovery');
+  const newBoard = factory && !recovery && params.has('new');
+  const factoryWindows = factory && window.toffeeDesktop?.platform === 'win32';
+  const restartUrl = FIRMWARE_PATH + (newBoard ? '/?new=1' : '/');
   const [choices, setChoices] = useState<FirmwareChoice[]>([]);
-  const [selected, setSelected] = useState('normal');
+  const [selected, setSelected] = useState(desktop && !factory ? 'usb-500ma' : 'normal');
   const [backup, setBackup] = useState<FirmwareRecovery | null>(null);
   const [backups, setBackups] = useState<FirmwareRecovery[]>([]);
   const [recoverySelection, setRecoverySelection] = useState('');
   const [recoveryConnection, setRecoveryConnection] = useState('bootloader');
+  const [sameBoard, setSameBoard] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
   const [ownsPage, setOwnsPage] = useState(false);
@@ -43,7 +56,8 @@ export function FirmwareUpdate() {
   const actionButton = useRef<HTMLButtonElement>(null);
   const [exports, setExports] = useState<{settings: string | null; sectors: string | null} | null>(null);
   const [percent, setPercent] = useState<number | null>(null);
-  const [message, setMessage] = useState(recovery ? 'Reconnect the same keyboard, then select its saved update.' : 'Your settings are backed up before the update.');
+  const [message, setMessage] = useState(newBoard ? 'Connect one new Module PCB in BOOTSEL.' :
+    recovery ? 'Reconnect the same keyboard, then select its saved update.' : 'Your settings are backed up before the update.');
   const [error, setError] = useState(false);
   const choice = recovery && backup ? backup.choice : choices.find(entry => entry.id === selected);
   useEffect(() => {
@@ -61,12 +75,13 @@ export function FirmwareUpdate() {
     fetch('/firmware-downloads/manifest.json').then(async response => {
       if (!response.ok) throw new Error('Firmware catalogue unavailable.');
       const entries: FirmwareChoice[] = await response.json();
-      if (entries.length !== 4 || entries.some(v => !['normal', 'manual', 'current-unlimited', 'usb-500ma'].includes(v.id) ||
+      const invalidCatalogue = factory ? entries.length !== 1 || entries[0]?.id !== 'normal' : entries.length !== 4;
+      if (invalidCatalogue || entries.some(v => !['normal', 'manual', 'current-unlimited', 'usb-500ma'].includes(v.id) ||
           v.file !== v.id + '.uf2' || !/^[0-9a-f]{64}$/.test(v.sha256) || ![2,3].includes(v.lightingProtocol)))
         throw new Error('Invalid firmware catalogue.');
       setChoices(entries);
     }).catch(failure => {setMessage(failure.message); setError(true);});
-    readRecoveries().then(saved => {setBackups(saved); setStorageReady(true);})
+    readRecoveries().then(saved => {setBackups(factory ? saved.filter(record => record.choice.id === 'normal') : saved); setStorageReady(true);})
       .catch(failure => {setMessage('Local recovery storage unavailable: ' + failure.message); setError(true);});
   }, []);
   useEffect(() => {
@@ -97,8 +112,16 @@ export function FirmwareUpdate() {
       console.error('Firmware updater:', (failure as Error).message);
     } finally {active.current = false; setBusy(false);}
   };
+  const desktopLocation = async (mode: ToffeeUsbMode, saved?: FirmwareRecovery, serial?: string) => {
+    if (!desktop) return undefined;
+    if (saved && !saved.usbLocation) {
+      throw new Error('This backup does not identify the original USB port. Keep it for support.');
+    }
+    return requireInstallerTarget(mode, await window.toffeeDesktop!.installerTarget(mode), saved?.usbLocation, serial);
+  };
   const verify = async (device: HIDDevice, saved: FirmwareRecovery) => {
     if (!['verified', 'complete'].includes(saved.status)) throw new Error('Firmware bytes must be verified before restoring settings.');
+    await desktopLocation('module', saved);
     if (!device.opened) await usbStep(device.open(), 'keyboard open');
     const next = new FirmwareConnection(device);
     try {
@@ -106,17 +129,20 @@ export function FirmwareUpdate() {
       await next.verify(saved.choice);
       if (saved.settings) {
         setMessage('Restoring and checking your VIA keymap, macros and layout…');
+        await desktopLocation('module', saved);
         await next.restoreSettings(saved.settings);
       }
       const completed: FirmwareRecovery = {...saved, status: 'complete'};
       await saveRecovery(completed); setBackup(completed); setBackups(await readRecoveries());
       setPhase('done'); setPercent(100);
-      setMessage(saved.settings ? 'Update complete. Firmware bytes and VIA settings verified. Please check normal typing.' :
+      setMessage(newBoard ? 'Board programmed. Firmware readback and startup verified.' :
+        saved.settings ? 'Update complete. Firmware bytes and VIA settings verified. Please check normal typing.' :
         'Firmware recovered and keyboard checks passed. No saved VIA backup was available; check your keymap and normal typing.');
     } finally {await usbStep(device.close(), 'keyboard close').catch(failure => console.warn('Keyboard cleanup:', failure.message));}
   };
   const flash = async (device: PicobootDevice, saved: FirmwareRecovery, bytes: Uint8Array) => {
     if (writeStarted.current) throw new Error('This update was already attempted. No automatic flash retry.');
+    await desktopLocation('bootloader', saved, device.serialNumber);
     writeStarted.current = true;
     let preserved = saved;
     try {
@@ -126,6 +152,7 @@ export function FirmwareUpdate() {
           originalSha256: await recoveryHash(sectors)};
         setMessage('Saving original firmware sectors locally before writing…');
         await saveRecovery(preserved); setBackup(preserved); setBackups(await readRecoveries());
+        await desktopLocation('bootloader', preserved, device.serialNumber);
       }, async verifiedBytes => {
         preserved = {...preserved, status: 'verified', verifiedBytes};
         setMessage('Saving verified result before restarting the keyboard…');
@@ -153,12 +180,15 @@ export function FirmwareUpdate() {
     const device = await chooseModule();
     const next = new FirmwareConnection(device);
     try {
+      const usbLocation = await desktopLocation('module');
       setMessage('Validating selected firmware and preserving private VIA settings…');
       const bytes = await fetchFirmware(choice!);
       const saved: FirmwareRecovery = {version: 2, id: crypto.randomUUID(), createdAt: new Date().toISOString(),
         choice: choice!, settings: await next.readSettings(), status: 'prepared', serial: null,
+        ...(usbLocation ? {usbLocation} : {}),
         targetImage: bytes, flashBase: FLASH_BASE, originalSectors: null, originalSha256: null, verifiedBytes: null};
       await saveRecovery(saved); setBackup(saved); setBackups(await readRecoveries());
+      await desktopLocation('module', saved);
       setPhase('bootloader'); setMessage('Requesting bootloader. Keep the same PCB connected…');
       try {await next.enterBootloader();}
       catch (failure) {setPhase('failed'); throw new Error('Bootloader request outcome uncertain: ' + (failure as Error).message + ' No automatic retry.');}
@@ -181,9 +211,12 @@ export function FirmwareUpdate() {
     const device = await chooseBootloader(usb!);
     let saved = backup;
     if (!saved) {
+      const usbLocation = await desktopLocation('bootloader', undefined, device.serialNumber);
       const bytes = await fetchFirmware(choice!);
       saved = {version: 2, id: crypto.randomUUID(), createdAt: new Date().toISOString(), choice: choice!,
-        settings: null, status: 'prepared', serial: null, targetImage: bytes, flashBase: FLASH_BASE,
+        settings: null, status: 'prepared', serial: null,
+        ...(usbLocation ? {usbLocation} : {}),
+        targetImage: bytes, flashBase: FLASH_BASE,
         originalSectors: null, originalSha256: null, verifiedBytes: null};
     } else if (!saved.targetImage) {
       setMessage('This older backup needs the exact original release. Checking its saved SHA-256…');
@@ -194,7 +227,7 @@ export function FirmwareUpdate() {
     await flash(device, saved, saved.targetImage!);
   });
   const advance = () => {
-    if (phase === 'idle') return recovery ? recover() : start();
+    if (phase === 'idle') return recovery || newBoard ? recover() : start();
     if (phase === 'bootloader') return run(async () => {
       const device = await chooseBootloader(usb!);
       await flash(device, backup!, backup!.targetImage!);
@@ -202,11 +235,17 @@ export function FirmwareUpdate() {
     if (phase === 'verify') return run(async () => verify(await chooseModule(), backup!));
   };
   const buttonLabel = busy ? (phase === 'idle' ? 'Preparing update…' : phase === 'verify' ? 'Checking keyboard…' : 'Updating firmware…') :
-    {idle: recovery ? 'Recover keyboard' : 'Update firmware', bootloader: 'Allow bootloader access', verify: 'Reconnect keyboard', done: 'Firmware updated', failed: 'Update stopped'}[phase];
+    {idle: newBoard ? 'Flash firmware' : recovery ? 'Recover keyboard' : 'Update firmware', bootloader: 'Allow bootloader access', verify: 'Reconnect keyboard', done: 'Firmware updated', failed: 'Update stopped'}[phase];
   return <Page>
-    <a href="/">← Configurator</a>
-    <h1>{recovery ? 'Recover your keyboard' : 'Module firmware update'}</h1>
-    <p>{recovery ? 'Continue an interrupted update and restore your saved settings.' : 'Choose your firmware. We’ll install it and check your keyboard.'}</p>
+    {factory ? <nav aria-label="Flasher">
+      <a href={FIRMWARE_PATH + '/?new=1'} aria-current={newBoard ? 'page' : undefined}>Flash a new board</a>
+      <a href={FIRMWARE_PATH + '/'} aria-current={!newBoard && !recovery ? 'page' : undefined}>Update a programmed board</a>
+      <a href={FIRMWARE_PATH + '/?recovery=1'} aria-current={recovery ? 'page' : undefined}>Recover an update</a>
+    </nav> : <a href="/">← Configurator</a>}
+    <h1>{newBoard ? 'Flash a new Module board' : recovery ? 'Recover your keyboard' : 'Module firmware update'}</h1>
+    {installerDisabled && <p>Firmware files are available below. For an update, use the online configurator while desktop USB verification is in testing.</p>}
+    <p>{newBoard ? 'Use the station’s known-good USB connection. With the board in BOOTSEL, connect it by USB.' :
+      recovery ? 'Continue an interrupted update and restore your saved settings.' : 'Choose your firmware. We’ll install it and check your keyboard.'}</p>
     <section aria-label="Firmware update">
       {recovery && <>
         <label htmlFor="recovery-backup">Saved update</label>
@@ -239,17 +278,32 @@ export function FirmwareUpdate() {
         {recoverySelection === 'none' && <p className="warning">Your previous keymap cannot be restored without its backup. The firmware currently on the board may be incomplete.</p>}
         <p><label><input type="checkbox" checked={confirmed} disabled={busy || phase !== 'idle'} onChange={e => setConfirmed(e.target.checked)}/> {recoverySelection !== 'none' ? 'This backup belongs to the only keyboard connected.' : 'Only the intended keyboard is connected. I understand there is no saved keymap to restore.'}</label></p>
       </>}
+      {qualifyInstaller && !recovery && phase === 'idle' && <label>
+        <input type="checkbox" checked={sameBoard} disabled={busy} onChange={e => setSameBoard(e.target.checked)}/>
+        {newBoard ? 'Only one new Module is connected, in BOOTSEL.' :
+          'Only the intended keyboard is connected. I’ll keep it connected to the same USB port.'}
+      </label>}
       {choice && choice.mode !== 'normal' && <p className="warning">No current limiting. Overload can disconnect the board. Use your physical meter.</p>}
-      <button ref={actionButton} aria-describedby="firmware-status" disabled={busy || !choice || !storageReady || !ownsPage || phase === 'done' || phase === 'failed' || !navigator.hid || !usb || recovery && (!confirmed || !recoverySelection)}
+      <button ref={actionButton} aria-describedby="firmware-status" disabled={installerDisabled || qualifyInstaller && !recovery && phase === 'idle' && !sameBoard || busy || !choice || !storageReady || !ownsPage || phase === 'done' || phase === 'failed' || !navigator.hid || !usb || recovery && (!confirmed || !recoverySelection)}
         onClick={advance}>{buttonLabel}</button>
       <p id="firmware-status" className="status" role={error ? 'alert' : 'status'} aria-live="polite">{message}</p>
       {percent !== null && !error && <progress aria-label="Firmware update progress" max={100} value={percent}/>}
-      <p><small>Keep only this keyboard connected and close other keyboard tabs. Keep the cable connected until the update finishes. Chrome may ask for keyboard and bootloader access.</small></p>
+      <p><small>{factory ? 'Keep this board connected until the result is shown.' :
+        'Keep only this keyboard connected and close other keyboard tabs. Keep the cable connected until the update finishes. Chrome may ask for keyboard and bootloader access.'}</small></p>
       {(!navigator.hid || !usb) && <p className="warning">This browser needs WebHID and WebUSB. Open in desktop Chrome/Edge on HTTPS or localhost. No hardware commands have been sent.</p>}
       {phase === 'failed' && <p className="warning">Update stopped. Your backup is retained in Update details. The update has not been confirmed complete.</p>}
       {!busy && (phase === 'failed' || !recovery && phase === 'idle') && <p><a href={FIRMWARE_PATH + '/?recovery=1'}>{phase === 'failed' ? 'Reconnect and recover this update' : 'Recover an interrupted update'}</a></p>}
       {recovery && <p><small>If RP2 Boot is missing from the chooser, the keyboard may need its physical bootloader procedure. Reconnecting alone may not restart a partially written firmware. Contact support for your PCB’s procedure.</small></p>}
-      {!busy && (phase === 'idle' || phase === 'bootloader' || phase === 'failed') &&
+      {factoryWindows && (newBoard || recovery || phase === 'bootloader' || phase === 'failed') && phase !== 'done' &&
+        <details className="support" open={error ? true : undefined}>
+          <summary>Windows USB driver setup</summary>
+          <p>Run this if RP2 Boot does not connect. Keep one Module in BOOTSEL and approve the Windows administrator prompt.</p>
+          <button disabled={busy || !ownsPage} type="button" onClick={() => void run(async () => {
+            setMessage('Waiting for Windows USB driver setup…');
+            setMessage(await window.toffeeDesktop!.installUsbDriver(backup?.usbLocation ?? null));
+          })}>Install Windows USB driver</button>
+        </details>}
+      {!factory && !busy && (phase === 'idle' || phase === 'bootloader' || phase === 'failed') &&
         <details className="support" open={phase === 'bootloader' && error ? true : undefined}>
           <summary>Windows: RP2 Boot missing or won’t connect</summary>
           <p><a href="/firmware-downloads/toffee-windows-setup-v1.exe" download>Download Toffee Windows Setup</a></p>
@@ -275,9 +329,10 @@ export function FirmwareUpdate() {
           {exports.settings && <a href={exports.settings} download="module-settings.json">Download private VIA backup</a>}
           {exports.sectors && <a href={exports.sectors} download={`original-firmware-${backup.id}.bin`}>Download original firmware sectors</a>}
         </div>}
-        <p><a href="/firmware-downloads/module-firmware-and-updater.zip" download>Download existing macOS recovery tools</a>. These are not needed for browser updates.</p>
+        {factory ? <p><a href="/firmware-downloads/normal.uf2" download>Download Normal 940 mA UF2</a></p> :
+          <p><a href="/firmware-downloads/module-firmware-and-updater.zip" download>Download existing macOS recovery tools</a>. These are not needed for browser updates.</p>}
       </details>
-      {phase === 'done' && <p><a href={FIRMWARE_PATH + '/'}>Start a new update</a></p>}
+      {phase === 'done' && <p><a href={restartUrl}>{newBoard ? 'Flash another board' : 'Start a new update'}</a></p>}
     </section>
   </Page>;
 }

@@ -1,5 +1,5 @@
 // Simulated RP2040 ROM only. No native USB imports or physical enumeration.
-import {FLASH_BASE, PicobootDevice} from '../src/utils/toffee_studio/picoboot';
+import {FLASH_BASE, PicobootDevice} from '../src/features/firmware-installer/picoboot';
 
 export class FirmwareFakeUSB implements PicobootDevice {
   vendorId = 0x2e8a; productId = 3; serialNumber = 'SIMULATED-RP2'; opened = false;

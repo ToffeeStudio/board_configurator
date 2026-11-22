@@ -5,7 +5,7 @@ import {
   EMULATED_PRODUCT_NAME, isEmulatedBoardConnected, isEmulatedDevice,
 } from '../src/utils/toffee_studio/emulated-board';
 import {ToffeeHIDDevice, ToffeeLightingAPI} from '../src/utils/toffee_studio/hid';
-import {chooseModule} from '../src/utils/toffee_studio/firmware-update';
+import {chooseModule} from '../src/features/firmware-installer/firmware-update';
 import {debugCommand} from '../src/utils/toffee_studio/manual-measurement';
 import lightingMap from '../src/utils/toffee_studio/lighting-map.json';
 import definition from '../src/draft_definition.json';

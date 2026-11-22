@@ -1,0 +1,21 @@
+{
+  "name": "toffee-configurator-desktop",
+  "productName": "Toffee Configurator",
+  "version": "0.1.0",
+  "private": true,
+  "main": "main.mjs",
+  "scripts": {
+    "stage": "node build.mjs",
+    "start": "electron .build/app",
+    "package": "node build.mjs --package",
+    "package:factory": "node build.mjs --package --factory",
+    "test:factory": "bun build tests/installer-fixture.ts --target browser --outfile .build/test-fixtures/installer.js && playwright test --config tests/factory.playwright.config.mjs",
+    "test": "bun build tests/installer-fixture.ts --target browser --outfile .build/test-fixtures/installer.js && playwright test --config tests/playwright.config.mjs"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "@playwright/test": "1.65.1",
+    "electron": "45.4.1"
+  },
+  "trustedDependencies": ["electron"]
+}

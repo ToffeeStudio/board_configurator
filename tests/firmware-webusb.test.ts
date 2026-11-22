@@ -1,8 +1,8 @@
 import {expect, test} from 'bun:test';
 import {readFileSync} from 'node:fs';
-import {flashBrowserFirmware, chooseBootloader, grantedBootloader} from '../src/utils/toffee_studio/firmware-webusb';
+import {flashBrowserFirmware, chooseBootloader, grantedBootloader} from '../src/features/firmware-installer/firmware-webusb';
 import {FirmwareFakeUSB} from './firmware-fake-usb';
-import {uf2Payload} from '../src/utils/toffee_studio/picoboot';
+import {uf2Payload} from '../src/features/firmware-installer/picoboot';
 const manifest = JSON.parse(readFileSync('firmware-downloads/manifest.json', 'utf8'));
 const image = (file: string) => new Uint8Array(readFileSync('firmware-downloads/' + file));
 test('all three catalogue images: archive before erase, preserve tail, byte-verify, reboot once', async () => {

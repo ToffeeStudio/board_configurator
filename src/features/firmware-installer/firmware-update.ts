@@ -1,5 +1,5 @@
-import {CommandID, ToffeeHIDDevice, ToffeeLightingAPI} from './hid';
-import {isEmulatedBoardConnected, isEmulatedDevice} from './emulated-board';
+import {CommandID, ToffeeHIDDevice, ToffeeLightingAPI} from '../../utils/toffee_studio/hid';
+import {isEmulatedBoardConnected, isEmulatedDevice} from '../../utils/toffee_studio/emulated-board';
 import {usbStep} from './picoboot';
 
 export type FirmwareChoice = {

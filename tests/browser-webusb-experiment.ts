@@ -1,8 +1,8 @@
 // Explicit real hardware experiment. Run only with the intended single PCB.
-import {chooseModule, fetchFirmware, FirmwareChoice, FirmwareConnection, ViaSettings, MODULE_FILTER, validateSettings} from '../src/utils/toffee_studio/firmware-update';
+import {chooseModule, fetchFirmware, FirmwareChoice, FirmwareConnection, ViaSettings, MODULE_FILTER, validateSettings} from '../src/features/firmware-installer/firmware-update';
 import {ToffeeHIDDevice, ToffeeLightingAPI} from '../src/utils/toffee_studio/hid';
 import {DEBUG_ENABLED} from '../src/config/debug';
-import {openPicoboot, uf2Payload, eraseImage} from '../src/utils/toffee_studio/picoboot';
+import {openPicoboot, uf2Payload, eraseImage} from '../src/features/firmware-installer/picoboot';
 if (!DEBUG_ENABLED) throw new Error('Debug disabled.');
 const choice: FirmwareChoice = {id:'normal',name:'normal9',description:'Same normal firmware',file:'normal.uf2',sha256:'78d05883df9de9fcee88d9c216aa744be6ef1d4a55eeffbf2504b500f61f282b',profile:9,mode:'normal',testBuild:null};
 const button = (id:string) => document.getElementById(id) as HTMLButtonElement;

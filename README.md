@@ -1,5 +1,7 @@
 # Toffee board configurator
 
+See [desktop setup and tests](electron/README.md) for the Electron preview.
+
 For the Windows firmware updater, see [Toffee Module Windows Setup](tools/windows-winusb-setup/README.md).
 
 **11 November — Lighting Debug button receives mouse clicks.** The Lighting

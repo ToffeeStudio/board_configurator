@@ -1,6 +1,6 @@
 // EXPLICIT HARDWARE EXPERIMENT, not an automated regression or production entry.
 // Native APIs only: no HID mocks, native USB bridge, permission bypass or retry.
-import {chooseModule, fetchFirmware, FirmwareChoice, FirmwareConnection, ViaSettings} from '../src/utils/toffee_studio/firmware-update';
+import {chooseModule, fetchFirmware, FirmwareChoice, FirmwareConnection, ViaSettings} from '../src/features/firmware-installer/firmware-update';
 import {ToffeeHIDDevice, ToffeeLightingAPI} from '../src/utils/toffee_studio/hid';
 import {DEBUG_ENABLED} from '../src/config/debug';
 if (!DEBUG_ENABLED) throw new Error('Debug is disabled.');

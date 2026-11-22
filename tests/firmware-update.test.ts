@@ -1,6 +1,6 @@
 import {expect, test} from 'bun:test';
 import {readFileSync} from 'node:fs';
-import {FirmwareConnection, FirmwareChoice, validateFirmware, validateSettings} from '../src/utils/toffee_studio/firmware-update';
+import {FirmwareConnection, FirmwareChoice, validateFirmware, validateSettings} from '../src/features/firmware-installer/firmware-update';
 import {FirmwareFakeDevice} from './firmware-fake-device';
 import {ToffeeHIDDevice, ToffeeLightingAPI} from '../src/utils/toffee_studio/hid';
 const manifest: FirmwareChoice[] = JSON.parse(readFileSync('firmware-downloads/manifest.json', 'utf8'));
