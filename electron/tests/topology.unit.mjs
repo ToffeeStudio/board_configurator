@@ -37,10 +37,23 @@ test('macOS accepts the USB device physical location and ignores unrelated servi
   assert.deepEqual(parseMacUsb(input), [{id: '1067:626d', path: '02100000', serial: null}]);
 });
 
-test('Windows rejects multiple port paths and composite HID interfaces', () => {
+test('Windows rejects ambiguous paths and composite HID interfaces', () => {
   const candidate = {InstanceId: 'USB\\VID_1067&PID_626D\\A', Paths: ['path A', 'path B']};
   assert.deepEqual(parseWindowsUsb(JSON.stringify([candidate])), [{id: '1067:626d', path: null, serial: 'A'}]);
   assert.throws(() => parseWindowsUsb(JSON.stringify([{...candidate, InstanceId: 'USB\\VID_1067&PID_626D&MI_00\\A'}])));
+});
+
+test('Windows selects the PCI path when ACPI reports the same USB port', () => {
+  const pci = 'PCIROOT(0)#PCI(0200)#USBROOT(0)#USB(5)';
+  const acpi = 'ACPI(_SB_)#ACPI(PCI0)#ACPI(S10_)#USBROOT(0)#USB(5)';
+  const targets = (InstanceId, Paths) => parseWindowsUsb(JSON.stringify([{InstanceId, Paths}]));
+  const boot = 'USB\\VID_2E8A&PID_0003\\TOFFEEVMROM1';
+  const module = 'USB\\VID_1067&PID_626D\\TOFFEEVM0001';
+  assert.equal(targets(boot, [acpi, pci])[0].path, pci);
+  assert.equal(targets(boot, [pci, acpi.replace('USB(5)', 'USB(6)')])[0].path, null);
+  assert.equal(targets(boot, [pci, pci.replace('PCI(0200)', 'PCI(0300)'), acpi])[0].path, null);
+  assert.equal(identifyTarget('win32', 'host', targets(boot, [acpi, pci]), 'bootloader').location,
+    identifyTarget('win32', 'host', targets(module, [pci]), 'module').location);
 });
 
 test('application and bootloader agree only on the same USB location', () => {

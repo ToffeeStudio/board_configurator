@@ -20,15 +20,26 @@ export function parseMacUsb(text) {
   });
 }
 
+function windowsPortPath(paths) {
+  const unique = [...new Set(paths.map(path => path.toUpperCase()))];
+  if (unique.length <= 1) return unique[0] ?? null;
+  // PnP can report both PCI and ACPI names for the same controller and USB chain.
+  const pciPaths = unique.filter(path => /^PCIROOT\([0-9A-F]+\)(#PCI\([0-9A-F]+\))+#USBROOT\(/.test(path));
+  if (pciPaths.length !== 1) return null;
+  const [pciPath] = pciPaths;
+  const usbChain = pciPath.match(/#USBROOT\([0-9]+\)(#USB\([0-9]+\))+$/)?.[0];
+  if (!usbChain || unique.some(path => path !== pciPath &&
+    (!path.startsWith('ACPI(') || path.slice(path.indexOf('#USBROOT(')) !== usbChain))) return null;
+  return pciPath;
+}
+
 export function parseWindowsUsb(text) {
   const devices = JSON.parse(text);
   if (!Array.isArray(devices)) throw new Error('Unexpected Windows USB inventory.');
   return devices.map(({InstanceId, Paths}) => {
     const match = /^USB\\VID_([0-9A-F]{4})&PID_([0-9A-F]{4})\\([^\\]+)$/i.exec(InstanceId);
     if (!match) throw new Error('Unexpected USB device instance.');
-    // Pick a path only when the device supplies one unambiguous controller/port chain.
-    const paths = [...new Set(Paths.map(path => path.toUpperCase()))];
-    return {id: (match[1] + ':' + match[2]).toLowerCase(), path: paths.length === 1 ? paths[0] : null,
+    return {id: (match[1] + ':' + match[2]).toLowerCase(), path: windowsPortPath(Paths),
       serial: match[3]};
   });
 }
