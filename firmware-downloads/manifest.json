@@ -2,13 +2,13 @@
   {
     "id": "normal",
     "name": "Normal · 940 mA",
-    "description": "Profile13: repaired-PCB-B current estimate with front/badge output capped at 190/255. Keeps the 940 mA estimate limit, lighting v3, saved settings and startup fade. Hold both physical Shift keys at startup to save all lighting brightness at zero.",
+    "description": "Profile13: repaired-PCB-B current estimate with front/badge output capped at 190/255. New boards continuously cycle through a rainbow after startup. Keeps the 940 mA estimate limit, lighting v3, saved settings and startup fade. Hold both physical Shift keys at startup to save all lighting brightness at zero.",
     "profile": 13,
     "lightingProtocol": 3,
     "mode": "normal",
     "testBuild": null,
     "file": "normal.uf2",
-    "sha256": "3166a155e2a37b6dc3bf67a1ddff3467aa4bc100a0eca08b659963734a17bd94"
+    "sha256": "4c95f11e32350430dd8c7e160819a91164a6b541bb96f548813fc4841d6f3e3e"
   },
   {
     "id": "manual",

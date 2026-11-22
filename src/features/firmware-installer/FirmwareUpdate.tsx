@@ -288,6 +288,7 @@ export function FirmwareUpdate() {
         onClick={advance}>{buttonLabel}</button>
       <p id="firmware-status" className="status" role={error ? 'alert' : 'status'} aria-live="polite">{message}</p>
       {percent !== null && !error && <progress aria-label="Firmware update progress" max={100} value={percent}/>}
+      {newBoard && phase === 'done' && <p>With factory lighting settings, the PCB continuously cycles through a rainbow LED animation.</p>}
       <p><small>{factory ? 'Keep this board connected until the result is shown.' :
         'Keep only this keyboard connected and close other keyboard tabs. Keep the cable connected until the update finishes. Chrome may ask for keyboard and bootloader access.'}</small></p>
       {(!navigator.hid || !usb) && <p className="warning">This browser needs WebHID and WebUSB. Open in desktop Chrome/Edge on HTTPS or localhost. No hardware commands have been sent.</p>}

@@ -35,7 +35,7 @@ test('portable flasher ships only the Normal firmware and flashes a simulated bl
     });
     expect(resources).toEqual({
       ids: ['normal'],
-      hash: '3166a155e2a37b6dc3bf67a1ddff3467aa4bc100a0eca08b659963734a17bd94',
+      hash: '4c95f11e32350430dd8c7e160819a91164a6b541bb96f548813fc4841d6f3e3e',
       unavailable: [404, 404, 404, 404],
     });
     await app.evaluate(({ipcMain, dialog}) => {
@@ -54,6 +54,8 @@ test('portable flasher ships only the Normal firmware and flashes a simulated bl
     await flash.click();
     await expect(page.getByRole('status').filter({hasText: 'Board programmed. Firmware readback and startup verified.'}))
       .toBeVisible({timeout: 40_000});
+    await expect(page.getByText('With factory lighting settings, the PCB continuously cycles through a rainbow LED animation.',
+      {exact: true})).toBeVisible();
     expect(await page.evaluate(() => window.readInstallerFixture())).toMatchObject({erases: 1, settingsWrites: 0});
     await page.getByRole('link', {name: 'Flash another board'}).click();
     await expect(page.getByRole('button', {name: 'Flash firmware', exact: true})).toBeDisabled();

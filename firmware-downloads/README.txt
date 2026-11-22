@@ -24,7 +24,8 @@ The new Shift shortcut needs intact running application firmware; interrupted
 firmware flashing still uses the separate bootloader recovery procedure below.
 The manual measurement image is unchanged.
 normal.uf2: normal profile13, 940 mA estimate limit, front/badge rescaled to190,
-  normal saves and 1-second dark startup followed by 1-second fade.
+  normal saves and 1-second dark startup followed by 1-second fade. A new PCB
+  cycles through a rainbow animation continuously after startup.
 manual.uf2: manual build0x26101002/profile0x8006; no output/current cap or timeout,
   starts dark, test changes not saved, older informational estimator.
 current-unlimited.uf2: normal profile14, current limit removed ONLY; keeps
@@ -82,7 +83,7 @@ On a copy failure STOP: don't loop/retry writes blindly. Keep the recovery copy.
 SHA256 values are in manifest.json. GPL license is included. Complete firmware
 source is available in https://github.com/ToffeeStudio/qmk_firmware on the
 screenless-pcb branch. Exact corresponding source checkpoints:
-  normal.uf2: e66f75d5c902a183141da26d86e0f4f777a63653
+  normal.uf2: d24d33b3187571ae1156268f48e2bc9fe6267da7
   manual.uf2: 5b96a707636bb8ec70a2ba831da1b6eec382d7c6
   current-unlimited.uf2: e66f75d5c902a183141da26d86e0f4f777a63653
   usb-500ma.uf2: 99889d846b61cd86c38589c0c46574891507c88e

@@ -10,12 +10,14 @@ Firmware: Normal 940 mA (profile 13)
    Install Windows USB driver, and approve the administrator prompt.
    Use the same port and keep only the intended board connected.
 5. Keep USB connected until you see Board programmed. Firmware readback and
-   startup verified. For the next PCB, disconnect the completed board and
-   select Flash another board.
+   startup verified. Once the firmware is flashed, the PCB will continuously
+   cycle through a rainbow LED animation. Confirm the animation on each new
+   PCB, then disconnect it and select Flash another board.
 
 For an already programmed Module, use Update a programmed board. The flasher
 backs up its VIA settings, verifies the installed firmware, and restores the
-settings. If interrupted, reconnect the same PCB on the same USB port and use
+settings. An update retains the board's saved lighting preferences. If
+interrupted, reconnect the same PCB on the same USB port and use
 Recover an update. Update details also contains a download of the bundled UF2.
 
 The firmware and driver helper are included. No internet connection or Node.js

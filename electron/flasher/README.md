@@ -3,6 +3,7 @@
 This standalone Electron build opens the shared Module installer directly.
 Its renderer includes the existing firmware updater, backup and recovery UI.
 The package offers the Normal 940 mA production image and its verified UF2.
+A new PCB continuously cycles through a rainbow animation after startup.
 It omits the keyboard configuration screens, desktop power profiles and tray.
 
 From the configurator root, after installing locked dependencies:
@@ -25,5 +26,6 @@ bun run --cwd electron test:factory
 ```
 
 The packaged test uses a simulated Module and RP2 bootloader. The factory's
-first physical check should exercise a blank board, confirm firmware startup,
-and verify any Windows driver setup needed on the actual station.
+first physical check should exercise a blank board, confirm that its LEDs
+cycle through the rainbow, and verify any Windows driver setup needed on
+the actual station.
